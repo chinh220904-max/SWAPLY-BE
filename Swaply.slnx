@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Swaply.Api/Swaply.Api.csproj" />
+  <Project Path="Swaply.Application/Swaply.Application.csproj" />
+  <Project Path="Swaply.Domain/Swaply.Domain.csproj" />
+  <Project Path="Swaply.Infrastructure/Swaply.Infrastructure.csproj" />
+</Solution>

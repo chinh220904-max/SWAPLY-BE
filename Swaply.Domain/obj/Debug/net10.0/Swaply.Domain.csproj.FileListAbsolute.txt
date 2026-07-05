@@ -1,0 +1,11 @@
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\bin\Debug\net10.0\Swaply.Domain.deps.json
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\bin\Debug\net10.0\Swaply.Domain.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\bin\Debug\net10.0\Swaply.Domain.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\obj\Debug\net10.0\Swaply.Domain.GeneratedMSBuildEditorConfig.editorconfig
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\obj\Debug\net10.0\Swaply.Domain.AssemblyInfoInputs.cache
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\obj\Debug\net10.0\Swaply.Domain.AssemblyInfo.cs
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\obj\Debug\net10.0\Swaply.Domain.csproj.CoreCompileInputs.cache
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\obj\Debug\net10.0\Swaply.Domain.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\obj\Debug\net10.0\refint\Swaply.Domain.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\obj\Debug\net10.0\Swaply.Domain.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Domain\obj\Debug\net10.0\ref\Swaply.Domain.dll

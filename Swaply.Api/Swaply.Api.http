@@ -1,0 +1,6 @@
+@Swaply.Api_HostAddress = http://localhost:5191
+
+GET {{Swaply.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

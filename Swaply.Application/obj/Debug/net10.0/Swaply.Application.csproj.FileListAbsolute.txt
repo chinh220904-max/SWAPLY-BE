@@ -1,0 +1,15 @@
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\bin\Debug\net10.0\Swaply.Application.deps.json
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\bin\Debug\net10.0\Swaply.Application.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\bin\Debug\net10.0\Swaply.Application.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\bin\Debug\net10.0\Swaply.Domain.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\bin\Debug\net10.0\Swaply.Domain.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\Swaply.Application.csproj.AssemblyReference.cache
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\Swaply.Application.GeneratedMSBuildEditorConfig.editorconfig
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\Swaply.Application.AssemblyInfoInputs.cache
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\Swaply.Application.AssemblyInfo.cs
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\Swaply.Application.csproj.CoreCompileInputs.cache
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\Swaply.A.F0973EAB.Up2Date
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\Swaply.Application.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\refint\Swaply.Application.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\Swaply.Application.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Application\obj\Debug\net10.0\ref\Swaply.Application.dll

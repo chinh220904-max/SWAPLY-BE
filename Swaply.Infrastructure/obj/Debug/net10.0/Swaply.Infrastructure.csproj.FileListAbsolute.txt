@@ -1,0 +1,17 @@
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\bin\Debug\net10.0\Swaply.Infrastructure.deps.json
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\bin\Debug\net10.0\Swaply.Infrastructure.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\bin\Debug\net10.0\Swaply.Infrastructure.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\bin\Debug\net10.0\Swaply.Application.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\bin\Debug\net10.0\Swaply.Domain.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\bin\Debug\net10.0\Swaply.Application.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\bin\Debug\net10.0\Swaply.Domain.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\Swaply.Infrastructure.csproj.AssemblyReference.cache
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\Swaply.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\Swaply.Infrastructure.AssemblyInfoInputs.cache
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\Swaply.Infrastructure.AssemblyInfo.cs
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\Swaply.Infrastructure.csproj.CoreCompileInputs.cache
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\Swaply.I.704ADB79.Up2Date
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\Swaply.Infrastructure.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\refint\Swaply.Infrastructure.dll
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\Swaply.Infrastructure.pdb
+E:\Document\KỲ 7\SWD\SWDD\Swaply.Infrastructure\obj\Debug\net10.0\ref\Swaply.Infrastructure.dll
