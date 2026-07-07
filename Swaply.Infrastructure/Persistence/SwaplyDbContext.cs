@@ -25,6 +25,7 @@ public class SwaplyDbContext : DbContext
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<MatchingHistory> MatchingHistories => Set<MatchingHistory>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
+    public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
