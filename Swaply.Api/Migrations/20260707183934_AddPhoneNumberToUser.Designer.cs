@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Swaply.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Swaply.Infrastructure.Persistence;
 namespace Swaply.Api.Migrations
 {
     [DbContext(typeof(SwaplyDbContext))]
-    partial class SwaplyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260707183934_AddPhoneNumberToUser")]
+    partial class AddPhoneNumberToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

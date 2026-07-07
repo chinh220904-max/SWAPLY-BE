@@ -8,6 +8,7 @@ public class User
     public string PasswordHash { get; private set; } = string.Empty;
     public string? FullName { get; private set; }
     public string? AvatarUrl { get; private set; }
+    public string? PhoneNumber { get; private set; }
     public Guid RoleId { get; private set; }
 
     // Navigation property
@@ -51,7 +52,7 @@ public class User
     // EF Core constructor
     private User() { }
 
-    public User(string email, string userName, string passwordHash, Guid roleId)
+    public User(string email, string userName, string passwordHash, string? phoneNumber, Guid roleId, string? fullName = null)
     {
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentException("Email is required.", nameof(email));
@@ -62,14 +63,22 @@ public class User
         Email = email.ToLowerInvariant().Trim();
         UserName = userName.Trim();
         PasswordHash = passwordHash;
+        PhoneNumber = phoneNumber?.Trim();
         RoleId = roleId;
+        FullName = fullName?.Trim();
         CreatedAt = DateTime.UtcNow;
         IsBanned = false;
     }
 
-    public void UpdateProfile(string? fullName)
+    public void SetPhoneNumber(string? phoneNumber)
+    {
+        PhoneNumber = phoneNumber?.Trim();
+    }
+
+    public void UpdateProfile(string? fullName, string? phoneNumber)
     {
         FullName = fullName?.Trim();
+        PhoneNumber = phoneNumber?.Trim();
     }
 
     public void SetAvatar(string avatarUrl)
@@ -99,5 +108,10 @@ public class User
     public void RecordLogin()
     {
         LastLoginAt = DateTime.UtcNow;
+    }
+
+    public void UpdatePassword(string passwordHash)
+    {
+        PasswordHash = passwordHash;
     }
 }
