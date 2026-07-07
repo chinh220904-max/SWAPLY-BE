@@ -16,8 +16,16 @@ public class ListingService : IListingService
     public async Task<Listing> CreateListingAsync(CreateListingRequest request, CancellationToken cancellationToken = default)
     {
         var price = new Money(request.EstimatedAmount, request.Currency);
-        var listing = new Listing(Guid.NewGuid(), request.Title, request.Description, request.OwnerId, price);
-        
+        var listing = new Listing(
+            Guid.NewGuid(),
+            request.Title,
+            request.Description,
+            request.OwnerId,
+            request.CategoryId,
+            price,
+            request.Condition
+        );
+
         await _listingRepository.AddAsync(listing, cancellationToken);
         return listing;
     }

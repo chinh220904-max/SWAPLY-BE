@@ -1,9 +1,13 @@
+using Swaply.Domain.Entities;
+
 namespace Swaply.Application.ListingManagement;
 
 public record CreateListingRequest(
     string Title,
     string Description,
-    string OwnerId,
+    Guid OwnerId,
+    Guid CategoryId,
     decimal EstimatedAmount,
-    string Currency = "VND"
+    string Currency = "VND",
+    ItemCondition Condition = ItemCondition.Good
 );

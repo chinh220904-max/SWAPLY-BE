@@ -21,11 +21,11 @@ public class ExchangeService : IExchangeService
         _exchangeDomainService = exchangeDomainService;
     }
 
-    public async Task<Exchange> ProposeExchangeAsync(Guid proposerListingId, Guid receiverListingId, CancellationToken cancellationToken = default)
+    public async Task<Exchange> ProposeExchangeAsync(Guid proposerListingId, Guid receiverListingId, Guid proposerId, CancellationToken cancellationToken = default)
     {
         var proposerListing = await _listingRepository.GetByIdAsync(proposerListingId, cancellationToken)
             ?? throw new ListingNotFoundException(proposerListingId);
-            
+
         var receiverListing = await _listingRepository.GetByIdAsync(receiverListingId, cancellationToken)
             ?? throw new ListingNotFoundException(receiverListingId);
 
@@ -35,10 +35,9 @@ public class ExchangeService : IExchangeService
         }
 
         var exchange = new Exchange(
-            Guid.NewGuid(), 
-            proposerListingId, 
-            receiverListingId, 
-            proposerListing.OwnerId, 
+            proposerListingId,
+            receiverListingId,
+            proposerId,
             receiverListing.OwnerId
         );
 
@@ -52,7 +51,7 @@ public class ExchangeService : IExchangeService
         if (exchange == null) return false;
 
         exchange.Accept();
-        
+
         var proposerListing = await _listingRepository.GetByIdAsync(exchange.ProposerListingId, cancellationToken);
         var receiverListing = await _listingRepository.GetByIdAsync(exchange.ReceiverListingId, cancellationToken);
 
@@ -67,7 +66,7 @@ public class ExchangeService : IExchangeService
 
         exchange.Complete();
         await _exchangeRepository.UpdateAsync(exchange, cancellationToken);
-        
+
         return true;
     }
 

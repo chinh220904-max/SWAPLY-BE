@@ -17,7 +17,7 @@ public class ExchangesController : ControllerBase
     [HttpPost("propose")]
     public async Task<IActionResult> ProposeExchange([FromBody] ProposeExchangeModel model)
     {
-        var exchange = await _exchangeService.ProposeExchangeAsync(model.ProposerListingId, model.ReceiverListingId);
+        var exchange = await _exchangeService.ProposeExchangeAsync(model.ProposerListingId, model.ReceiverListingId, model.ProposerId);
         return Ok(exchange);
     }
 
@@ -38,4 +38,4 @@ public class ExchangesController : ControllerBase
     }
 }
 
-public record ProposeExchangeModel(Guid ProposerListingId, Guid ReceiverListingId);
+public record ProposeExchangeModel(Guid ProposerListingId, Guid ReceiverListingId, Guid ProposerId);

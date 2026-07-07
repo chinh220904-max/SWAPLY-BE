@@ -1,5 +1,4 @@
 using Swaply.Domain.Entities;
-using Swaply.Domain.Enums;
 using Swaply.Domain.Repositories;
 using Swaply.Infrastructure.Persistence;
 

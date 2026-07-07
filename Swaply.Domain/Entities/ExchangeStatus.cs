@@ -1,4 +1,4 @@
-namespace Swaply.Domain.Enums;
+namespace Swaply.Domain.Entities;
 
 public enum ExchangeStatus
 {

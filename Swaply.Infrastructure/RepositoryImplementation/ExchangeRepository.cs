@@ -31,7 +31,7 @@ public class ExchangeRepository : IExchangeRepository
         return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<Exchange>> GetExchangesByUserAsync(string userId, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<Exchange>> GetExchangesByUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var exchanges = _context.Exchanges.Where(x => x.ProposerId == userId || x.ReceiverId == userId);
         return Task.FromResult<IEnumerable<Exchange>>(exchanges.ToList());

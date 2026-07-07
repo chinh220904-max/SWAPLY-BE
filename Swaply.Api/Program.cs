@@ -10,17 +10,19 @@ builder.Services.AddSignalR();
 
 // Register Clean Architecture Layers
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection")!);
 
 // Configure OpenAPI/Swagger
-builder.Services.AddOpenApi();
-
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 var app = builder.Build();
+Console.WriteLine(app.Environment.EnvironmentName);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

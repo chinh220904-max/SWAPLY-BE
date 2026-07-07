@@ -1,38 +1,34 @@
+using Microsoft.EntityFrameworkCore;
 using Swaply.Domain.Entities;
-using System.Collections.Concurrent;
 
 namespace Swaply.Infrastructure.Persistence;
 
-public class SwaplyDbContext
+public class SwaplyDbContext : DbContext
 {
-    public ConcurrentBag<Listing> Listings { get; } = new();
-    public ConcurrentBag<Exchange> Exchanges { get; } = new();
-
-    public SwaplyDbContext()
+    public SwaplyDbContext(DbContextOptions<SwaplyDbContext> options) : base(options)
     {
-        // Seed some initial data
-        SeedData();
     }
 
-    private void SeedData()
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Listing> Listings => Set<Listing>();
+    public DbSet<ListingImage> ListingImages => Set<ListingImage>();
+    public DbSet<Exchange> Exchanges => Set<Exchange>();
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<Message> Messages => Set<Message>();
+    public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PremiumPlan> PremiumPlans => Set<PremiumPlan>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<Swaply.Domain.Entities.Payment> Payments => Set<Swaply.Domain.Entities.Payment>();
+    public DbSet<Report> Reports => Set<Report>();
+    public DbSet<MatchingHistory> MatchingHistories => Set<MatchingHistory>();
+    public DbSet<Favorite> Favorites => Set<Favorite>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var price1 = new Swaply.Domain.ValueObjects.Money(150000, "VND");
-        var price2 = new Swaply.Domain.ValueObjects.Money(200000, "VND");
-
-        Listings.Add(new Listing(
-            Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            "Cũi em bé gỗ sồi",
-            "Cần đổi lấy xe đẩy em bé cũ. Cũi còn mới 90%.",
-            "user_proposer",
-            price1
-        ));
-
-        Listings.Add(new Listing(
-            Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            "Xe đẩy em bé Aprica",
-            "Muốn đổi lấy cũi gỗ hoặc đồ chơi lắp ráp cho bé.",
-            "user_receiver",
-            price2
-        ));
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SwaplyDbContext).Assembly);
     }
 }

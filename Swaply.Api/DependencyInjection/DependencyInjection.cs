@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Swaply.Application.Administration;
 using Swaply.Application.Authentication;
 using Swaply.Application.ChatManagement;
@@ -32,10 +34,14 @@ public static class DependencyInjection
         return services;
     }
 
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string connectionString)
     {
-        // Persistence
-        services.AddSingleton<SwaplyDbContext>(); // Shared in-memory database mock
+        // Persistence — real EF Core DbContext
+        services.AddDbContext<SwaplyDbContext>(options =>
+        {
+            options.UseSqlServer(connectionString, b => b.MigrationsAssembly("Swaply.Api"));
+        });
+
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IExchangeRepository, ExchangeRepository>();
 
