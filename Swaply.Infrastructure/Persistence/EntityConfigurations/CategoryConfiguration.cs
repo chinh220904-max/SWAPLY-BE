@@ -22,17 +22,9 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(c => c.Description)
             .HasMaxLength(500);
 
-        builder.Property(c => c.IconUrl)
-            .HasMaxLength(2048);
-
         builder.HasMany(c => c.Listings)
             .WithOne(l => l.Category)
             .HasForeignKey(l => l.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasData(
-            new Category(Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"), "Baby Gear", "Cribs, strollers, car seats, etc.", "baby-gear.png"),
-            new Category(Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"), "Toys", "Action figures, dolls, board games, etc.", "toys.png")
-        );
     }
 }

@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +8,9 @@ using Swaply.Api.DependencyInjection;
 using Swaply.Api.Hubs;
 using Swaply.Api.Middleware;
 using Swaply.Infrastructure.Persistence;
+
+// Clear default claim type mappings to preserve original claim types
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +38,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    options.SaveToken = true;  // Save token for debugging
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -41,7 +47,42 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = jwtSettings.Issuer,
         ValidAudience = jwtSettings.Audience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+        ClockSkew = TimeSpan.FromMinutes(5)
+    };
+
+    // Log authentication events for debugging
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("OnMessageReceived - Token exists: {Token}",
+                context.Request.Headers["Authorization"].FirstOrDefault()?.Substring(0, 50));
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError(context.Exception, "JWT Authentication failed. Type: {Type}, Message: {Message}",
+                context.Exception.GetType().Name, context.Exception.Message);
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("JWT Token validated. User: {User}, Claims: {Claims}",
+                context.Principal?.Identity?.Name,
+                context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}").Aggregate((a, b) => $"{a}, {b}"));
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning("JWT Challenge. Error: {Error}, Desc: {Desc}, AuthScheme: {Scheme}",
+                context.Error, context.ErrorDescription, context.AuthenticateFailure?.GetType().Name);
+            return Task.CompletedTask;
+        }
     };
 });
 

@@ -57,7 +57,7 @@ public class AuthController : ControllerBase
         if (!success)
             return BadRequest(new { error });
 
-        return Ok(new { token });
+        return Ok(new { token = $"Bearer {token}" });
     }
 
     /// <summary>

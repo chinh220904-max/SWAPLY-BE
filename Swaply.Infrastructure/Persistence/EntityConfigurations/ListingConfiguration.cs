@@ -34,6 +34,20 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
                 .HasDefaultValue("VND");
         });
 
+        builder.OwnsOne(l => l.CashTopUp, money =>
+        {
+            money.Property(m => m.Amount)
+                .HasColumnName("CashTopUpAmount")
+                .HasColumnType("decimal(18,2)");
+
+            money.Property(m => m.Currency)
+                .HasColumnName("CashTopUpCurrency")
+                .HasMaxLength(10)
+                .HasDefaultValue("VND");
+        });
+
+        builder.Navigation(l => l.CashTopUp).IsRequired(false);
+
         // Enum conversions
         builder.Property(l => l.Condition)
             .IsRequired()

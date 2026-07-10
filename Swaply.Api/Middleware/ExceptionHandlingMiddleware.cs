@@ -23,7 +23,8 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred during the request.");
+            _logger.LogError(ex, "An unhandled exception occurred during the request. Path: {Path}, Method: {Method}", 
+                context.Request.Path, context.Request.Method);
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -37,6 +38,11 @@ public class ExceptionHandlingMiddleware
         {
             code = HttpStatusCode.BadRequest;
             message = domainEx.Message;
+        }
+        else if (exception is UnauthorizedAccessException)
+        {
+            code = HttpStatusCode.Unauthorized;
+            message = exception.Message;
         }
         else if (exception is KeyNotFoundException)
         {

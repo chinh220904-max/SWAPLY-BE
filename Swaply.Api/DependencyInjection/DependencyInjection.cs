@@ -49,6 +49,8 @@ public static class DependencyInjection
         services.AddScoped<IExchangeRepository, ExchangeRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpRepository, OtpRepository>();
+        services.AddScoped<IFavoriteRepository, FavoriteRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
 
         // Identity Services
         services.AddScoped<IIdentityService, IdentityService>();
@@ -76,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, SignalRNotificationService>();
 
         // Image upload (Cloudinary)
+        services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
         services.AddScoped<IImageUploadService, CloudinaryImageService>();
 
         return services;

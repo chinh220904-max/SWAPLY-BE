@@ -15,6 +15,15 @@ public class Listing
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
+    // Additional fields for Swaply
+    public string Brand { get; private set; } = string.Empty;
+    public string ExchangeWish { get; private set; } = string.Empty;
+    public Money? CashTopUp { get; private set; }
+    public string Location { get; private set; } = string.Empty;
+    public int ViewCount { get; private set; } = 0;
+    public int FavoriteCount { get; private set; } = 0;
+    public DateTime? ExpiresAt { get; private set; }
+
     // Navigation properties
     public User? Owner { get; private set; }
     public Category? Category { get; private set; }
@@ -40,7 +49,18 @@ public class Listing
     // EF Core constructor
     private Listing() { }
 
-    public Listing(Guid id, string title, string description, Guid ownerId, Guid categoryId, Money estimatedValue, ItemCondition condition)
+    public Listing(
+        Guid id,
+        string title,
+        string description,
+        Guid ownerId,
+        Guid categoryId,
+        Money estimatedValue,
+        ItemCondition condition,
+        string brand = "",
+        string exchangeWish = "",
+        Money? cashTopUp = null,
+        string location = "")
     {
         if (ownerId == Guid.Empty)
             throw new ArgumentException("OwnerId cannot be empty.", nameof(ownerId));
@@ -54,8 +74,20 @@ public class Listing
         CategoryId = categoryId;
         EstimatedValue = estimatedValue;
         Condition = condition;
-        Status = ListingStatus.Active;
+        Brand = brand;
+        ExchangeWish = exchangeWish;
+        CashTopUp = cashTopUp;
+        Location = location;
+        Status = ListingStatus.Draft;
         CreatedAt = DateTime.UtcNow;
+        ExpiresAt = CreatedAt.AddDays(30);
+    }
+
+    public void Publish()
+    {
+        Status = ListingStatus.Active;
+        UpdatedAt = DateTime.UtcNow;
+        ExpiresAt = DateTime.UtcNow.AddDays(30);
     }
 
     public void MarkAsExchanged()
@@ -70,7 +102,23 @@ public class Listing
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void Update(string title, string description, Money estimatedValue, ItemCondition condition)
+    public void Hide()
+    {
+        Status = ListingStatus.Hidden;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Renew()
+    {
+        if (Status != ListingStatus.Expired)
+            throw new InvalidOperationException("Only expired listings can be renewed.");
+        Status = ListingStatus.Active;
+        ExpiresAt = DateTime.UtcNow.AddDays(30);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Update(string title, string description, Money estimatedValue, ItemCondition condition,
+        string brand, string exchangeWish, Money? cashTopUp, string location)
     {
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("Title cannot be empty.", nameof(title));
@@ -81,6 +129,30 @@ public class Listing
         Description = description;
         EstimatedValue = estimatedValue;
         Condition = condition;
+        Brand = brand;
+        ExchangeWish = exchangeWish;
+        CashTopUp = cashTopUp;
+        Location = location;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void IncrementViewCount()
+    {
+        ViewCount++;
+    }
+
+    public void AddImage(ListingImage image)
+    {
+        _images.Add(image);
+    }
+
+    public void RemoveImage(ListingImage image)
+    {
+        _images.Remove(image);
+    }
+
+    public void UpdateFavoriteCount()
+    {
+        FavoriteCount = _favorites.Count;
     }
 }
