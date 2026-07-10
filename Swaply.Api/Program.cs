@@ -43,6 +43,24 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError("JWT AUTH FAILED: {Error}", context.Exception.GetType().Name);
+            logger.LogError("JWT AUTH FAILED Message: {Message}", context.Exception.Message);
+            logger.LogError("JWT AUTH FAILED Inner: {Inner}", context.Exception.InnerException?.Message ?? "none");
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError("JWT CHALLENGE: Error={Error}, ErrorDescription={Desc}", context.Error, context.ErrorDescription);
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // Configure OpenAPI/Swagger with JWT Bearer

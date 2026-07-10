@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Swaply.Domain.Entities;
 using Swaply.Domain.Repositories;
 using Swaply.Infrastructure.Persistence;
@@ -13,27 +14,41 @@ public class ExchangeRepository : IExchangeRepository
         _context = context;
     }
 
-    public Task<Exchange?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Exchange?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var exchange = _context.Exchanges.FirstOrDefault(x => x.Id == id);
-        return Task.FromResult(exchange);
+        return await _context.Exchanges
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public Task AddAsync(Exchange exchange, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Exchange exchange, CancellationToken cancellationToken = default)
     {
-        _context.Exchanges.Add(exchange);
-        return Task.CompletedTask;
+        await _context.Exchanges.AddAsync(exchange, cancellationToken);
     }
 
     public Task UpdateAsync(Exchange exchange, CancellationToken cancellationToken = default)
     {
-        // In-memory update does not require extra actions since reference is same
+        _context.Exchanges.Update(exchange);
         return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<Exchange>> GetExchangesByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var exchanges = _context.Exchanges.Where(x => x.ProposerId == userId || x.ReceiverId == userId);
-        return Task.FromResult<IEnumerable<Exchange>>(exchanges.ToList());
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Exchange>> GetMyExchangesAsync(Guid proposerId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Exchanges
+            .Where(x => x.ProposerId == proposerId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Exchange>> GetIncomingExchangesAsync(Guid receiverId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Exchanges
+            .Where(x => x.ReceiverId == receiverId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 }
