@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 
 namespace Swaply.Infrastructure.Persistence.EntityConfigurations;
 

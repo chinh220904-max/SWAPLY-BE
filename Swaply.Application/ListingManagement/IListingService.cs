@@ -1,4 +1,5 @@
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 
 namespace Swaply.Application.ListingManagement;
 
@@ -15,6 +16,12 @@ public interface IListingService
     Task<Listing> UpdateStatusAsync(Guid id, ListingStatus status, CancellationToken cancellationToken = default);
     Task<Listing> PublishListingAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Listing> RenewListingAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Listing> SubmitForReviewAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Listing> ApproveListingAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Listing> RejectListingAsync(Guid id, string? reason = null, CancellationToken cancellationToken = default);
+
+    // Admin
+    Task<IEnumerable<Listing>> GetPendingListingsAsync(CancellationToken cancellationToken = default);
 
     // User's listings
     Task<IEnumerable<Listing>> GetMyListingsAsync(Guid userId, CancellationToken cancellationToken = default);

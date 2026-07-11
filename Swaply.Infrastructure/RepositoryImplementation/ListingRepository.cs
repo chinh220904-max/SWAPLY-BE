@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 using Swaply.Domain.Repositories;
 using Swaply.Domain.ValueObjects;
 using Swaply.Infrastructure.Persistence;
@@ -16,35 +18,48 @@ public class ListingRepository : IListingRepository
 
     public Task<Listing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var listing = _context.Listings.FirstOrDefault(x => x.Id == id);
+        var listing = _context.Listings
+            .Include(x => x.Images)
+            .Include(x => x.Owner)
+            .Include(x => x.Category)
+            .FirstOrDefault(x => x.Id == id);
         return Task.FromResult(listing);
     }
 
-    public Task AddAsync(Listing listing, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Listing listing, CancellationToken cancellationToken = default)
     {
-        _context.Listings.Add(listing);
-        return Task.CompletedTask;
+        await _context.Listings.AddAsync(listing, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task UpdateAsync(Listing listing, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Listing listing, CancellationToken cancellationToken = default)
     {
-        var existing = _context.Listings.FirstOrDefault(x => x.Id == listing.Id);
+        var existing = await _context.Listings
+            .Include(x => x.Images)
+            .FirstOrDefaultAsync(x => x.Id == listing.Id, cancellationToken);
+
         if (existing != null)
         {
-            _context.Listings.Remove(existing);
+            _context.Entry(existing).CurrentValues.SetValues(listing);
+            existing.ClearImages();
+            foreach (var image in listing.Images)
+                existing.AddImage(image);
+            await _context.SaveChangesAsync(cancellationToken);
+            return;
         }
-        _context.Listings.Add(listing);
-        return Task.CompletedTask;
+
+        await _context.Listings.AddAsync(listing, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var listing = _context.Listings.FirstOrDefault(x => x.Id == id);
+        var listing = await _context.Listings.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (listing != null)
         {
             _context.Listings.Remove(listing);
+            await _context.SaveChangesAsync(cancellationToken);
         }
-        return Task.CompletedTask;
     }
 
     public Task<IEnumerable<Listing>> GetActiveListingsAsync(CancellationToken cancellationToken = default)
@@ -61,7 +76,22 @@ public class ListingRepository : IListingRepository
 
     public Task<IEnumerable<Listing>> GetByStatusAsync(Guid ownerId, ListingStatus status, CancellationToken cancellationToken = default)
     {
-        var listings = _context.Listings.Where(x => x.OwnerId == ownerId && x.Status == status);
+        var listings = _context.Listings
+            .Include(x => x.Images)
+            .Include(x => x.Owner)
+            .Include(x => x.Category)
+            .Where(x => x.OwnerId == ownerId && x.Status == status);
+        return Task.FromResult<IEnumerable<Listing>>(listings.ToList());
+    }
+
+    public Task<IEnumerable<Listing>> GetByStatusListAsync(ListingStatus status, CancellationToken cancellationToken = default)
+    {
+        var listings = _context.Listings
+            .Include(x => x.Images)
+            .Include(x => x.Owner)
+            .Include(x => x.Category)
+            .Where(x => x.Status == status)
+            .OrderByDescending(x => x.CreatedAt);
         return Task.FromResult<IEnumerable<Listing>>(listings.ToList());
     }
 

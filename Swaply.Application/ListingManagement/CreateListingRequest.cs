@@ -1,3 +1,4 @@
+using Swaply.Domain.Enums;
 using Swaply.Domain.Entities;
 using Swaply.Domain.ValueObjects;
 
@@ -14,7 +15,8 @@ public record CreateListingRequest(
     string Brand = "",
     string ExchangeWish = "",
     decimal? CashTopUpAmount = null,
-    string Location = ""
+    string Location = "",
+    List<string>? ImageUrls = null
 );
 
 public record UpdateListingRequest(
@@ -66,7 +68,8 @@ public record ListingResponse(
     List<ListingImageResponse> Images,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    DateTime? ExpiresAt
+    DateTime? ExpiresAt,
+    string? RejectionReason
 );
 
 public record ListingImageResponse(

@@ -1,3 +1,4 @@
+using Swaply.Domain.Enums;
 using Swaply.Domain.ValueObjects;
 
 namespace Swaply.Domain.Entities;

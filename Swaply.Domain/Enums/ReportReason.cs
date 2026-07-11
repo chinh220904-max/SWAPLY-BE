@@ -1,4 +1,4 @@
-namespace Swaply.Domain.Entities;
+namespace Swaply.Domain.Enums;
 
 public enum ReportReason
 {

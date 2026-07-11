@@ -1,5 +1,6 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Swaply.Application.ListingManagement;
 
@@ -36,5 +37,11 @@ public class CloudinaryImageService : IImageUploadService
             throw new Exception($"Cloudinary upload failed: {uploadResult.Error.Message}");
 
         return uploadResult.SecureUrl.ToString();
+    }
+
+    public async Task<string> UploadFromFormFileAsync(IFormFile file, CancellationToken cancellationToken = default)
+    {
+        using var stream = file.OpenReadStream();
+        return await UploadImageAsync(stream, file.FileName, cancellationToken);
     }
 }

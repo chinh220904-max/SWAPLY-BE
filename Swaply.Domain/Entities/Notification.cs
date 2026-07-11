@@ -1,3 +1,5 @@
+using Swaply.Domain.Enums;
+
 namespace Swaply.Domain.Entities;
 
 public class Notification

@@ -1,4 +1,5 @@
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 using Swaply.Domain.Repositories;
 using Swaply.Domain.ValueObjects;
 using Swaply.Domain.Exceptions;
@@ -8,10 +9,12 @@ namespace Swaply.Application.ListingManagement;
 public class ListingService : IListingService
 {
     private readonly IListingRepository _listingRepository;
+    private readonly IListingImageRepository _listingImageRepository;
 
-    public ListingService(IListingRepository listingRepository)
+    public ListingService(IListingRepository listingRepository, IListingImageRepository listingImageRepository)
     {
         _listingRepository = listingRepository;
+        _listingImageRepository = listingImageRepository;
     }
 
     public async Task<Listing> CreateListingAsync(CreateListingRequest request, CancellationToken cancellationToken = default)
@@ -36,6 +39,15 @@ public class ListingService : IListingService
         );
 
         await _listingRepository.AddAsync(listing, cancellationToken);
+
+        // Add images if provided
+        if (request.ImageUrls != null && request.ImageUrls.Any())
+        {
+            var images = request.ImageUrls.Select((url, index) =>
+                new ListingImage(listing.Id, url, "", index)).ToList();
+            await _listingImageRepository.AddRangeAsync(images, cancellationToken);
+        }
+
         return listing;
     }
 
@@ -124,6 +136,41 @@ public class ListingService : IListingService
         listing.Renew();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
         return listing;
+    }
+
+    public async Task<Listing> SubmitForReviewAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new ListingNotFoundException(id);
+
+        listing.SubmitForReview();
+        await _listingRepository.UpdateAsync(listing, cancellationToken);
+        return listing;
+    }
+
+    public async Task<Listing> ApproveListingAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new ListingNotFoundException(id);
+
+        listing.Approve();
+        await _listingRepository.UpdateAsync(listing, cancellationToken);
+        return listing;
+    }
+
+    public async Task<Listing> RejectListingAsync(Guid id, string? reason = null, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new ListingNotFoundException(id);
+
+        listing.Reject(reason);
+        await _listingRepository.UpdateAsync(listing, cancellationToken);
+        return listing;
+    }
+
+    public async Task<IEnumerable<Listing>> GetPendingListingsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _listingRepository.GetByStatusListAsync(ListingStatus.Pending, cancellationToken);
     }
 
     public async Task<IEnumerable<Listing>> GetMyListingsAsync(Guid userId, CancellationToken cancellationToken = default)

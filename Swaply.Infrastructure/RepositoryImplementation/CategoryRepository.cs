@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Swaply.Domain.Entities;
 using Swaply.Domain.Repositories;
 using Swaply.Infrastructure.Persistence;
@@ -13,40 +14,40 @@ public class CategoryRepository : ICategoryRepository
         _context = context;
     }
 
-    public Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var category = _context.Categories.FirstOrDefault(c => c.Id == id);
-        return Task.FromResult(category);
+        var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        return category;
     }
 
-    public Task<Category?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+    public async Task<Category?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
     {
         var normalizedName = name.Trim();
-        var category = _context.Categories.FirstOrDefault(c => c.Name == normalizedName);
-        return Task.FromResult(category);
+        var category = await _context.Categories.FirstOrDefaultAsync(c => c.Name == normalizedName, cancellationToken);
+        return category;
     }
 
-    public Task<IEnumerable<Category>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Category>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var categories = _context.Categories.ToList();
-        return Task.FromResult<IEnumerable<Category>>(categories);
+        var categories = await _context.Categories.ToListAsync(cancellationToken);
+        return categories;
     }
 
-    public Task AddAsync(Category category, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Category category, CancellationToken cancellationToken = default)
     {
-        _context.Categories.Add(category);
-        return Task.CompletedTask;
+        await _context.Categories.AddAsync(category, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task UpdateAsync(Category category, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Category category, CancellationToken cancellationToken = default)
     {
         _context.Categories.Update(category);
-        return Task.CompletedTask;
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task DeleteAsync(Category category, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Category category, CancellationToken cancellationToken = default)
     {
         _context.Categories.Remove(category);
-        return Task.CompletedTask;
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,3 +1,4 @@
+using Swaply.Domain.Enums;
 using Swaply.Domain.ValueObjects;
 
 namespace Swaply.Domain.Entities;
@@ -23,6 +24,7 @@ public class Listing
     public int ViewCount { get; private set; } = 0;
     public int FavoriteCount { get; private set; } = 0;
     public DateTime? ExpiresAt { get; private set; }
+    public string? RejectionReason { get; private set; }
 
     // Navigation properties
     public User? Owner { get; private set; }
@@ -90,6 +92,32 @@ public class Listing
         ExpiresAt = DateTime.UtcNow.AddDays(30);
     }
 
+    public void SubmitForReview()
+    {
+        if (Status != ListingStatus.Draft)
+            throw new InvalidOperationException("Only draft listings can be submitted for review.");
+        Status = ListingStatus.Pending;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Approve()
+    {
+        if (Status != ListingStatus.Pending)
+            throw new InvalidOperationException("Only pending listings can be approved.");
+        Status = ListingStatus.Active;
+        ExpiresAt = DateTime.UtcNow.AddDays(30);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Reject(string? reason = null)
+    {
+        if (Status != ListingStatus.Pending)
+            throw new InvalidOperationException("Only pending listings can be rejected.");
+        Status = ListingStatus.Draft;
+        RejectionReason = reason;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void MarkAsExchanged()
     {
         Status = ListingStatus.Exchanged;
@@ -120,6 +148,8 @@ public class Listing
     public void Update(string title, string description, Money estimatedValue, ItemCondition condition,
         string brand, string exchangeWish, Money? cashTopUp, string location)
     {
+        if (Status != ListingStatus.Draft)
+            throw new InvalidOperationException("Only draft listings can be updated.");
         if (string.IsNullOrWhiteSpace(title))
             throw new ArgumentException("Title cannot be empty.", nameof(title));
         if (string.IsNullOrWhiteSpace(description))
@@ -149,6 +179,11 @@ public class Listing
     public void RemoveImage(ListingImage image)
     {
         _images.Remove(image);
+    }
+
+    public void ClearImages()
+    {
+        _images.Clear();
     }
 
     public void UpdateFavoriteCount()

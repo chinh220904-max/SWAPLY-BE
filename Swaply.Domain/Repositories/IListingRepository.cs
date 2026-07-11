@@ -1,4 +1,5 @@
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 using Swaply.Domain.ValueObjects;
 
 namespace Swaply.Domain.Repositories;
@@ -15,6 +16,7 @@ public interface IListingRepository
     Task<IEnumerable<Listing>> GetActiveListingsAsync(CancellationToken cancellationToken = default);
     Task<IEnumerable<Listing>> GetByOwnerIdAsync(Guid ownerId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Listing>> GetByStatusAsync(Guid ownerId, ListingStatus status, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Listing>> GetByStatusListAsync(ListingStatus status, CancellationToken cancellationToken = default);
     Task<IEnumerable<Listing>> SearchListingsAsync(
         string? keyword,
         Guid? categoryId,

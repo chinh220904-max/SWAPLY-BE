@@ -1,4 +1,5 @@
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 
 namespace Swaply.Domain.DomainServices;
 
