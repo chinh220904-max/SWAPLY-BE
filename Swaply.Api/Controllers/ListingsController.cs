@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swaply.Application.ListingManagement;
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 using Swaply.Domain.Repositories;
 using Swaply.Domain.ValueObjects;
 
@@ -17,19 +18,22 @@ public class ListingsController : ControllerBase
     private readonly IFavoriteRepository _favoriteRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IImageUploadService _imageUploadService;
 
     public ListingsController(
         IListingService listingService,
         IListingRepository listingRepository,
         IFavoriteRepository favoriteRepository,
         ICategoryRepository categoryRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IImageUploadService imageUploadService)
     {
         _listingService = listingService;
         _listingRepository = listingRepository;
         _favoriteRepository = favoriteRepository;
         _categoryRepository = categoryRepository;
         _userRepository = userRepository;
+        _imageUploadService = imageUploadService;
     }
 
     private Guid GetCurrentUserId()
@@ -81,14 +85,57 @@ public class ListingsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new listing (draft)
+    /// Create a new listing (multipart/form-data with image upload)
     /// </summary>
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateListing([FromBody] CreateListingRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> CreateListing(
+        [FromForm] string title,
+        [FromForm] string description,
+        [FromForm] Guid categoryId,
+        [FromForm] decimal estimatedAmount,
+        [FromForm] string currency = "VND",
+        [FromForm] ItemCondition condition = ItemCondition.Good,
+        [FromForm] string brand = "",
+        [FromForm] string exchangeWish = "",
+        [FromForm] decimal? cashTopUpAmount = null,
+        [FromForm] string location = "",
+        [FromForm] List<IFormFile>? images = null)
     {
         try
         {
+            var userId = GetCurrentUserId();
+
+            // Upload images if provided
+            var imageUrls = new List<string>();
+            if (images != null && images.Any())
+            {
+                foreach (var image in images)
+                {
+                    if (image.Length > 0)
+                    {
+                        var url = await _imageUploadService.UploadFromFormFileAsync(image);
+                        imageUrls.Add(url);
+                    }
+                }
+            }
+
+            var request = new CreateListingRequest(
+                title,
+                description,
+                userId,
+                categoryId,
+                estimatedAmount,
+                currency,
+                condition,
+                brand,
+                exchangeWish,
+                cashTopUpAmount,
+                location,
+                imageUrls.Any() ? imageUrls : null
+            );
+
             var listing = await _listingService.CreateListingAsync(request);
             return CreatedAtAction(nameof(GetListingById), new { id = listing.Id }, MapToDetailResponse(listing));
         }
@@ -151,11 +198,11 @@ public class ListingsController : ControllerBase
     }
 
     /// <summary>
-    /// Update listing status (publish, hide, etc.)
+    /// Submit draft listing for admin review
     /// </summary>
-    [HttpPatch("{id:guid}/status")]
+    [HttpPost("{id:guid}/submit")]
     [Authorize]
-    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateStatusRequest request)
+    public async Task<IActionResult> SubmitForReview(Guid id)
     {
         try
         {
@@ -167,8 +214,8 @@ public class ListingsController : ControllerBase
             if (listing.OwnerId != userId)
                 return Forbid();
 
-            var updated = await _listingService.UpdateStatusAsync(id, request.Status);
-            return Ok(MapToDetailResponse(updated));
+            var submitted = await _listingService.SubmitForReviewAsync(id);
+            return Ok(MapToDetailResponse(submitted));
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -181,33 +228,7 @@ public class ListingsController : ControllerBase
     }
 
     /// <summary>
-    /// Publish a draft listing
-    /// </summary>
-    [HttpPost("{id:guid}/publish")]
-    [Authorize]
-    public async Task<IActionResult> PublishListing(Guid id)
-    {
-        try
-        {
-            var listing = await _listingRepository.GetByIdAsync(id);
-            if (listing == null)
-                return NotFound(new { error = "Listing not found." });
-
-            var userId = GetCurrentUserId();
-            if (listing.OwnerId != userId)
-                return Forbid();
-
-            var published = await _listingService.PublishListingAsync(id);
-            return Ok(MapToDetailResponse(published));
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { error = ex.Message });
-        }
-    }
-
-    /// <summary>
-    /// Renew an expired listing
+    /// Renew an expired listing (resubmit for admin review)
     /// </summary>
     [HttpPost("{id:guid}/renew")]
     [Authorize]
@@ -363,7 +384,8 @@ public class ListingsController : ControllerBase
             }),
             createdAt = listing.CreatedAt,
             updatedAt = listing.UpdatedAt,
-            expiresAt = listing.ExpiresAt
+            expiresAt = listing.ExpiresAt,
+            rejectionReason = listing.RejectionReason
         };
     }
 }

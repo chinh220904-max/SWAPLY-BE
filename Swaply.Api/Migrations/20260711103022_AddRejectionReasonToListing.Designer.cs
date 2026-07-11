@@ -12,8 +12,8 @@ using Swaply.Infrastructure.Persistence;
 namespace Swaply.Api.Migrations
 {
     [DbContext(typeof(SwaplyDbContext))]
-    [Migration("20260710131301_RemoveCategoryIconUrl")]
-    partial class RemoveCategoryIconUrl
+    [Migration("20260711103022_AddRejectionReasonToListing")]
+    partial class AddRejectionReasonToListing
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -204,6 +204,9 @@ namespace Swaply.Api.Migrations
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
