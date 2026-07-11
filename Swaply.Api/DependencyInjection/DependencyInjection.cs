@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Swaply.Application.Administration;
 using Swaply.Application.Authentication;
 using Swaply.Application.ChatManagement;
+using Swaply.Application.ConversationManagement;
 using Swaply.Application.ExchangeManagement;
 using Swaply.Application.ListingManagement;
 using Swaply.Application.PremiumManagement;
@@ -30,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<IPremiumService, PremiumService>();
         services.AddScoped<IChatService, ChatService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IConversationService, ConversationService>();
 
         return services;
     }
@@ -49,6 +51,8 @@ public static class DependencyInjection
         services.AddScoped<IExchangeRepository, ExchangeRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IOtpRepository, OtpRepository>();
+        services.AddScoped<IConversationRepository, ConversationRepository>();
+        services.AddScoped<IMessageRepository, MessageRepository>();
 
         // Identity Services
         services.AddScoped<IIdentityService, IdentityService>();
