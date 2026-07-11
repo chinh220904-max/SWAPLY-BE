@@ -7,5 +7,7 @@ public interface IExchangeRepository
     Task<Exchange?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddAsync(Exchange exchange, CancellationToken cancellationToken = default);
     Task UpdateAsync(Exchange exchange, CancellationToken cancellationToken = default);
-    Task<IEnumerable<Exchange>> GetExchangesByUserAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<IEnumerable<Exchange>> GetMyExchangesAsync(Guid proposerId, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Exchange>> GetIncomingExchangesAsync(Guid receiverId, CancellationToken cancellationToken = default);
 }
