@@ -1,3 +1,4 @@
+using Swaply.Application.NotificationManagement;
 using Swaply.Domain.Entities;
 using Swaply.Domain.Repositories;
 
@@ -8,15 +9,18 @@ public class ReviewService : IReviewService
     private readonly IReviewRepository _reviewRepository;
     private readonly IExchangeRepository _exchangeRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
 
     public ReviewService(
         IReviewRepository reviewRepository,
         IExchangeRepository exchangeRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        INotificationService notificationService)
     {
         _reviewRepository = reviewRepository;
         _exchangeRepository = exchangeRepository;
         _userRepository = userRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<ReviewDto> CreateReviewAsync(Guid reviewerId, CreateReviewRequest request, CancellationToken cancellationToken = default)
@@ -63,6 +67,15 @@ public class ReviewService : IReviewService
         );
 
         var created = await _reviewRepository.CreateAsync(review, cancellationToken);
+
+        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+            UserId: request.RevieweeId,
+            Title: "New Review",
+            Content: "You received a new review.",
+            Type: "NewReview",
+            RelatedEntityId: created.Id,
+            RelatedEntityType: "Review"
+        ), cancellationToken);
 
         return ToReviewDto(created);
     }

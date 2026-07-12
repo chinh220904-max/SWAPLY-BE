@@ -1,3 +1,4 @@
+using Swaply.Application.NotificationManagement;
 using Swaply.Domain.DomainServices;
 using Swaply.Domain.Entities;
 using Swaply.Domain.Exceptions;
@@ -10,15 +11,21 @@ public class ExchangeService : IExchangeService
     private readonly IExchangeRepository _exchangeRepository;
     private readonly IListingRepository _listingRepository;
     private readonly IExchangeDomainService _exchangeDomainService;
+    private readonly INotificationService _notificationService;
+    private readonly IUserRepository _userRepository;
 
     public ExchangeService(
         IExchangeRepository exchangeRepository,
         IListingRepository listingRepository,
-        IExchangeDomainService exchangeDomainService)
+        IExchangeDomainService exchangeDomainService,
+        INotificationService notificationService,
+        IUserRepository userRepository)
     {
         _exchangeRepository = exchangeRepository;
         _listingRepository = listingRepository;
         _exchangeDomainService = exchangeDomainService;
+        _notificationService = notificationService;
+        _userRepository = userRepository;
     }
 
     public async Task<ExchangeDto> CreateExchangeAsync(CreateExchangeRequest request, Guid proposerId, CancellationToken cancellationToken = default)
@@ -29,7 +36,6 @@ public class ExchangeService : IExchangeService
         if (request.ProposerListingId == Guid.Empty || request.ReceiverListingId == Guid.Empty)
             throw new InvalidExchangeStateException("Listing ids are required.");
 
-        // TODO: Listing validation can be tightened when Listing module is finalized.
         var proposerListing = await _listingRepository.GetByIdAsync(request.ProposerListingId, cancellationToken);
         var receiverListing = await _listingRepository.GetByIdAsync(request.ReceiverListingId, cancellationToken);
 
@@ -39,7 +45,6 @@ public class ExchangeService : IExchangeService
         if (receiverListing == null)
             throw new ListingNotFoundException(request.ReceiverListingId);
 
-        // Proposer must own the proposer listing
         if (proposerListing.OwnerId != proposerId)
             throw new UnauthorizedExchangeActionException("User does not own the proposer listing.");
 
@@ -61,6 +66,18 @@ public class ExchangeService : IExchangeService
 
         await _exchangeRepository.AddAsync(exchange, cancellationToken);
         await _exchangeRepository.SaveChangesAsync(cancellationToken);
+
+        var proposer = await _userRepository.GetByIdAsync(proposerId);
+        var proposerName = proposer?.UserName ?? "A user";
+
+        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+            UserId: receiverId,
+            Title: "New Exchange Proposal",
+            Content: $"{proposerName} has sent you an exchange proposal.",
+            Type: "ExchangeProposal",
+            RelatedEntityId: exchange.Id,
+            RelatedEntityType: "Exchange"
+        ), cancellationToken);
 
         return MapToDto(exchange);
     }
@@ -100,6 +117,15 @@ public class ExchangeService : IExchangeService
         await _exchangeRepository.UpdateAsync(exchange, cancellationToken);
         await _exchangeRepository.SaveChangesAsync(cancellationToken);
 
+        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+            UserId: exchange.ProposerId,
+            Title: "Exchange Accepted",
+            Content: "Your exchange proposal has been accepted.",
+            Type: "ExchangeAccepted",
+            RelatedEntityId: exchange.Id,
+            RelatedEntityType: "Exchange"
+        ), cancellationToken);
+
         return MapToDto(exchange);
     }
 
@@ -116,6 +142,15 @@ public class ExchangeService : IExchangeService
         exchange.Reject();
         await _exchangeRepository.UpdateAsync(exchange, cancellationToken);
         await _exchangeRepository.SaveChangesAsync(cancellationToken);
+
+        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+            UserId: exchange.ProposerId,
+            Title: "Exchange Rejected",
+            Content: "Your exchange proposal has been rejected.",
+            Type: "ExchangeRejected",
+            RelatedEntityId: exchange.Id,
+            RelatedEntityType: "Exchange"
+        ), cancellationToken);
 
         return MapToDto(exchange);
     }
@@ -161,6 +196,24 @@ public class ExchangeService : IExchangeService
         exchange.Complete();
         await _exchangeRepository.UpdateAsync(exchange, cancellationToken);
         await _exchangeRepository.SaveChangesAsync(cancellationToken);
+
+        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+            UserId: exchange.ProposerId,
+            Title: "Exchange Completed",
+            Content: "Your exchange has been completed successfully.",
+            Type: "ExchangeCompleted",
+            RelatedEntityId: exchange.Id,
+            RelatedEntityType: "Exchange"
+        ), cancellationToken);
+
+        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+            UserId: exchange.ReceiverId,
+            Title: "Exchange Completed",
+            Content: "Your exchange has been completed successfully.",
+            Type: "ExchangeCompleted",
+            RelatedEntityId: exchange.Id,
+            RelatedEntityType: "Exchange"
+        ), cancellationToken);
 
         return MapToDto(exchange);
     }

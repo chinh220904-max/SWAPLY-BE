@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Swaply.Api.Services;
 using Swaply.Application.Administration;
 using Swaply.Application.Authentication;
 using Swaply.Application.ChatManagement;
 using Swaply.Application.ConversationManagement;
 using Swaply.Application.ExchangeManagement;
 using Swaply.Application.ListingManagement;
+using Swaply.Application.NotificationManagement;
 using Swaply.Application.PremiumManagement;
 using Swaply.Application.ReviewManagement;
 using Swaply.Domain.DomainServices;
@@ -17,7 +19,6 @@ using Swaply.Infrastructure.Identity;
 using Swaply.Infrastructure.Payment;
 using Swaply.Infrastructure.Persistence;
 using Swaply.Infrastructure.RepositoryImplementation;
-using Swaply.Infrastructure.SignalR;
 
 namespace Swaply.Api.DependencyInjection;
 
@@ -34,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IConversationService, ConversationService>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<Swaply.Application.NotificationManagement.INotificationService, Swaply.Application.NotificationManagement.NotificationService>();
 
         return services;
     }
@@ -56,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<IConversationRepository, ConversationRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         // Identity Services
         services.AddScoped<IIdentityService, IdentityService>();
@@ -79,8 +82,9 @@ public static class DependencyInjection
         // Payment
         services.AddScoped<IPaymentProcessor, StripePaymentProcessor>();
 
-        // Notification (SignalR)
-        services.AddScoped<INotificationService, SignalRNotificationService>();
+        // Notification (SignalR) - implements ChatManagement.INotificationService and NotificationManagement.IRealTimeNotificationService
+        services.AddScoped<global::Swaply.Application.ChatManagement.INotificationService, Swaply.Api.Services.SignalRNotificationService>();
+        services.AddScoped<Swaply.Application.NotificationManagement.IRealTimeNotificationService, Swaply.Api.Services.SignalRNotificationService>();
 
         // Image upload (Cloudinary)
         services.AddScoped<IImageUploadService, CloudinaryImageService>();
