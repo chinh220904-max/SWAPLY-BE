@@ -8,15 +8,18 @@ public class ConversationService : IConversationService
     private readonly IConversationRepository _conversationRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly IListingRepository _listingRepository;
+    private readonly IUserRepository _userRepository;
 
     public ConversationService(
         IConversationRepository conversationRepository,
         IMessageRepository messageRepository,
-        IListingRepository listingRepository)
+        IListingRepository listingRepository,
+        IUserRepository userRepository)
     {
         _conversationRepository = conversationRepository;
         _messageRepository = messageRepository;
         _listingRepository = listingRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<ConversationDto?> GetConversationByIdAsync(Guid conversationId, Guid currentUserId, CancellationToken cancellationToken = default)
@@ -38,18 +41,7 @@ public class ConversationService : IConversationService
 
     public async Task<ConversationDto> CreateConversationAsync(Guid currentUserId, CreateConversationRequest request, CancellationToken cancellationToken = default)
     {
-        if (currentUserId == request.OtherUserId)
-            throw new ArgumentException("Cannot create a conversation with yourself.");
-
-        var listing = await _listingRepository.GetByIdAsync(request.RelatedListingId, cancellationToken);
-        if (listing == null)
-            throw new InvalidOperationException("Listing not found.");
-
-        if (listing.OwnerId != request.OtherUserId)
-            throw new InvalidOperationException("You can only start a conversation with the listing owner.");
-
-        if (listing.OwnerId == currentUserId)
-            throw new ArgumentException("Cannot create a conversation about your own listing.");
+        await ValidateConversationRequest(currentUserId, request, cancellationToken);
 
         var existing = await _conversationRepository.GetByUsersAndListingAsync(
             currentUserId, request.OtherUserId, request.RelatedListingId, cancellationToken);
@@ -71,18 +63,7 @@ public class ConversationService : IConversationService
 
     public async Task<ConversationDto?> GetOrCreateConversationAsync(Guid currentUserId, CreateConversationRequest request, CancellationToken cancellationToken = default)
     {
-        if (currentUserId == request.OtherUserId)
-            throw new ArgumentException("Cannot create a conversation with yourself.");
-
-        var listing = await _listingRepository.GetByIdAsync(request.RelatedListingId, cancellationToken);
-        if (listing == null)
-            throw new InvalidOperationException("Listing not found.");
-
-        if (listing.OwnerId != request.OtherUserId)
-            throw new InvalidOperationException("You can only start a conversation with the listing owner.");
-
-        if (listing.OwnerId == currentUserId)
-            throw new ArgumentException("Cannot create a conversation about your own listing.");
+        await ValidateConversationRequest(currentUserId, request, cancellationToken);
 
         var existing = await _conversationRepository.GetByUsersAndListingAsync(
             currentUserId, request.OtherUserId, request.RelatedListingId, cancellationToken);
@@ -141,6 +122,26 @@ public class ConversationService : IConversationService
     private static bool IsParticipant(Conversation conversation, Guid userId)
     {
         return conversation.User1Id == userId || conversation.User2Id == userId;
+    }
+
+    private async Task ValidateConversationRequest(Guid currentUserId, CreateConversationRequest request, CancellationToken cancellationToken = default)
+    {
+        if (currentUserId == request.OtherUserId)
+            throw new ArgumentException("Cannot create a conversation with yourself.");
+
+        var otherUser = await _userRepository.GetByIdAsync(request.OtherUserId);
+        if (otherUser == null)
+            throw new InvalidOperationException("Target user not found.");
+
+        var listing = await _listingRepository.GetByIdAsync(request.RelatedListingId, cancellationToken);
+        if (listing == null)
+            throw new InvalidOperationException("Listing not found.");
+
+        if (listing.OwnerId != request.OtherUserId)
+            throw new InvalidOperationException("You can only start a conversation with the listing owner.");
+
+        if (listing.OwnerId == currentUserId)
+            throw new ArgumentException("Cannot create a conversation about your own listing.");
     }
 
     private static ConversationDto ToConversationDto(Conversation conversation, Guid currentUserId)

@@ -26,7 +26,8 @@ public class MessageRepository : IMessageRepository
     public async Task<Message> CreateAsync(Message message, CancellationToken cancellationToken = default)
     {
         await _context.Messages.AddAsync(message, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        // SaveChanges is intentionally NOT called here.
+        // Caller is responsible for calling SaveChanges once to commit all changes.
         return message;
     }
 

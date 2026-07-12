@@ -8,6 +8,7 @@ using Swaply.Application.ConversationManagement;
 using Swaply.Application.ExchangeManagement;
 using Swaply.Application.ListingManagement;
 using Swaply.Application.PremiumManagement;
+using Swaply.Application.ReviewManagement;
 using Swaply.Domain.DomainServices;
 using Swaply.Domain.Repositories;
 using Swaply.Infrastructure.Cloudinary;
@@ -32,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IChatService, ChatService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IConversationService, ConversationService>();
+        services.AddScoped<IReviewService, ReviewService>();
 
         return services;
     }
@@ -53,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<IOtpRepository, OtpRepository>();
         services.AddScoped<IConversationRepository, ConversationRepository>();
         services.AddScoped<IMessageRepository, MessageRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
 
         // Identity Services
         services.AddScoped<IIdentityService, IdentityService>();
