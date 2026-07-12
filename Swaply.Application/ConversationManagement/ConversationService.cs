@@ -1,3 +1,4 @@
+using Swaply.Application.NotificationManagement;
 using Swaply.Domain.Entities;
 using Swaply.Domain.Repositories;
 
@@ -9,17 +10,20 @@ public class ConversationService : IConversationService
     private readonly IMessageRepository _messageRepository;
     private readonly IListingRepository _listingRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
 
     public ConversationService(
         IConversationRepository conversationRepository,
         IMessageRepository messageRepository,
         IListingRepository listingRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        INotificationService notificationService)
     {
         _conversationRepository = conversationRepository;
         _messageRepository = messageRepository;
         _listingRepository = listingRepository;
         _userRepository = userRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<ConversationDto?> GetConversationByIdAsync(Guid conversationId, Guid currentUserId, CancellationToken cancellationToken = default)
@@ -115,6 +119,17 @@ public class ConversationService : IConversationService
 
         var created = await _messageRepository.CreateAsync(message, cancellationToken);
         await _conversationRepository.SaveChangesAsync(cancellationToken);
+
+        var receiverId = conversation.User1Id == senderId ? conversation.User2Id : conversation.User1Id;
+
+        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+            UserId: receiverId,
+            Title: "New Message",
+            Content: "You received a new message.",
+            Type: "NewMessage",
+            RelatedEntityId: conversation.Id,
+            RelatedEntityType: "Conversation"
+        ), cancellationToken);
 
         return ToMessageDto(created);
     }
