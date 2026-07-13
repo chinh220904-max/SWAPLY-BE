@@ -5,7 +5,7 @@
 namespace Swaply.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class RemoveIconUrlFromCategories : Migration
+    public partial class CleanupRemovedMigrations : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
