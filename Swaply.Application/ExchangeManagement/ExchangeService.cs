@@ -1,6 +1,7 @@
 using Swaply.Application.NotificationManagement;
 using Swaply.Domain.DomainServices;
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 using Swaply.Domain.Exceptions;
 using Swaply.Domain.Repositories;
 

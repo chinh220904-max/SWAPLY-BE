@@ -1,5 +1,6 @@
 using Swaply.Application.NotificationManagement;
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 using Swaply.Domain.Repositories;
 
 namespace Swaply.Application.ReviewManagement;
