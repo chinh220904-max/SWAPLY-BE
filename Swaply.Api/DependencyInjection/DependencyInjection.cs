@@ -3,6 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swaply.Api.Services;
 using Swaply.Application.Administration;
+using Swaply.Application.AdminManagement;
+using Swaply.Application.AdminManagement.FluentValidation;
 using Swaply.Application.Authentication;
 using Swaply.Application.ChatManagement;
 using Swaply.Application.ConversationManagement;
@@ -10,7 +12,9 @@ using Swaply.Application.ExchangeManagement;
 using Swaply.Application.ListingManagement;
 using Swaply.Application.NotificationManagement;
 using Swaply.Application.PremiumManagement;
+using Swaply.Application.ReportManagement;
 using Swaply.Application.ReviewManagement;
+using FluentValidation;
 using Swaply.Domain.DomainServices;
 using Swaply.Domain.Repositories;
 using Swaply.Infrastructure.Cloudinary;
@@ -35,7 +39,10 @@ public static class DependencyInjection
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IConversationService, ConversationService>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<IReportService, ReportService>();
         services.AddScoped<Swaply.Application.NotificationManagement.INotificationService, Swaply.Application.NotificationManagement.NotificationService>();
+        services.AddScoped<IAdminUserService, AdminUserService>();
+        services.AddScoped<IValidator<LockUserRequest>, LockUserValidator>();
 
         return services;
     }
@@ -62,6 +69,7 @@ public static class DependencyInjection
         services.AddScoped<IMessageRepository, MessageRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
 
         // Identity Services
         services.AddScoped<IIdentityService, IdentityService>();
