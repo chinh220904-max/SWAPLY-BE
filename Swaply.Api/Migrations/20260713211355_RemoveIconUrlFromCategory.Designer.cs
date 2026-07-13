@@ -12,8 +12,8 @@ using Swaply.Infrastructure.Persistence;
 namespace Swaply.Api.Migrations
 {
     [DbContext(typeof(SwaplyDbContext))]
-    [Migration("20260713202046_RemoveIconUrlFromCategories")]
-    partial class RemoveIconUrlFromCategories
+    [Migration("20260713211355_RemoveIconUrlFromCategory")]
+    partial class RemoveIconUrlFromCategory
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
