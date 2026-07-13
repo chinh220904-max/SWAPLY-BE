@@ -4,12 +4,14 @@ namespace Swaply.Domain.Repositories;
 
 public interface IUserRepository
 {
-    Task<User?> GetByIdAsync(Guid id);
-    Task<User?> GetByEmailAsync(string email);
-    Task<User?> GetByUsernameAsync(string username);
-    Task<bool> ExistsByEmailAsync(string email);
-    Task<bool> ExistsByUsernameAsync(string username);
-    Task AddAsync(User user);
-    Task UpdateAsync(User user);
-    Task<Role?> GetRoleByNameAsync(string roleName);
+    Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task<bool> ExistsByUsernameAsync(string username, CancellationToken cancellationToken = default);
+    Task AddAsync(User user, CancellationToken cancellationToken = default);
+    Task UpdateAsync(User user, CancellationToken cancellationToken = default);
+    Task<Role?> GetRoleByNameAsync(string roleName, CancellationToken cancellationToken = default);
+    Task<IEnumerable<User>> SearchUsersAsync(string? keyword, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<int> SearchUsersCountAsync(string? keyword, CancellationToken cancellationToken = default);
 }
