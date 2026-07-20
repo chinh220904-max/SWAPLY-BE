@@ -35,15 +35,11 @@ public class ListingRepository : IListingRepository
     public async Task UpdateAsync(Listing listing, CancellationToken cancellationToken = default)
     {
         var existing = await _context.Listings
-            .Include(x => x.Images)
             .FirstOrDefaultAsync(x => x.Id == listing.Id, cancellationToken);
 
         if (existing != null)
         {
             _context.Entry(existing).CurrentValues.SetValues(listing);
-            existing.ClearImages();
-            foreach (var image in listing.Images)
-                existing.AddImage(image);
             await _context.SaveChangesAsync(cancellationToken);
             return;
         }
@@ -64,13 +60,21 @@ public class ListingRepository : IListingRepository
 
     public Task<IEnumerable<Listing>> GetActiveListingsAsync(CancellationToken cancellationToken = default)
     {
-        var active = _context.Listings.Where(x => x.Status == ListingStatus.Active);
+        var active = _context.Listings
+            .Include(x => x.Images)
+            .Include(x => x.Owner)
+            .Include(x => x.Category)
+            .Where(x => x.Status == ListingStatus.Active);
         return Task.FromResult<IEnumerable<Listing>>(active.ToList());
     }
 
     public Task<IEnumerable<Listing>> GetByOwnerIdAsync(Guid ownerId, CancellationToken cancellationToken = default)
     {
-        var listings = _context.Listings.Where(x => x.OwnerId == ownerId);
+        var listings = _context.Listings
+            .Include(x => x.Images)
+            .Include(x => x.Owner)
+            .Include(x => x.Category)
+            .Where(x => x.OwnerId == ownerId);
         return Task.FromResult<IEnumerable<Listing>>(listings.ToList());
     }
 
@@ -108,7 +112,11 @@ public class ListingRepository : IListingRepository
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.Listings.AsQueryable();
+        var query = _context.Listings
+            .Include(x => x.Images)
+            .Include(x => x.Owner)
+            .Include(x => x.Category)
+            .AsQueryable();
 
         // Filter by status (default to Active if not specified)
         if (status.HasValue)
@@ -146,13 +154,14 @@ public class ListingRepository : IListingRepository
             query = query.Where(x => x.EstimatedValue.Amount <= maxPrice.Value);
 
         // Sorting
+        var nowUtc = DateTime.UtcNow;
         query = sortBy?.ToLower() switch
         {
             "newest" => query.OrderByDescending(x => x.CreatedAt),
-            "oldest" => query.OrderBy(x => x.CreatedAt),
+            "popular" => query.OrderByDescending(x => x.ViewCount),
             "price_asc" => query.OrderBy(x => x.EstimatedValue.Amount),
             "price_desc" => query.OrderByDescending(x => x.EstimatedValue.Amount),
-            "popular" => query.OrderByDescending(x => x.ViewCount),
+            "oldest" => query.OrderBy(x => x.CreatedAt),
             _ => query.OrderByDescending(x => x.CreatedAt)
         };
 

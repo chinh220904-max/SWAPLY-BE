@@ -11,7 +11,7 @@ using Swaply.Api.Middleware;
 using Swaply.Infrastructure.Persistence;
 
 // Clear default claim type mappings to preserve original claim types
-JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear(); 
 
 var builder = WebApplication.CreateBuilder(args);
 
