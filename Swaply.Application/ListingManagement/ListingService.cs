@@ -48,7 +48,9 @@ public class ListingService : IListingService
             await _listingImageRepository.AddRangeAsync(images, cancellationToken);
         }
 
-        return listing;
+        // Re-fetch to load navigation properties (Owner, Category, Images)
+        return await _listingRepository.GetByIdAsync(listing.Id, cancellationToken)
+            ?? listing;
     }
 
     public async Task<Listing?> GetListingByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -83,7 +85,8 @@ public class ListingService : IListingService
         );
 
         await _listingRepository.UpdateAsync(listing, cancellationToken);
-        return listing;
+        return await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? listing;
     }
 
     public async Task DeleteListingAsync(Guid id, CancellationToken cancellationToken = default)
@@ -115,7 +118,8 @@ public class ListingService : IListingService
         }
 
         await _listingRepository.UpdateAsync(listing, cancellationToken);
-        return listing;
+        return await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? listing;
     }
 
     public async Task<Listing> PublishListingAsync(Guid id, CancellationToken cancellationToken = default)
@@ -125,7 +129,8 @@ public class ListingService : IListingService
 
         listing.Publish();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
-        return listing;
+        return await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? listing;
     }
 
     public async Task<Listing> RenewListingAsync(Guid id, CancellationToken cancellationToken = default)
@@ -135,7 +140,8 @@ public class ListingService : IListingService
 
         listing.Renew();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
-        return listing;
+        return await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? listing;
     }
 
     public async Task<Listing> SubmitForReviewAsync(Guid id, CancellationToken cancellationToken = default)
@@ -145,7 +151,8 @@ public class ListingService : IListingService
 
         listing.SubmitForReview();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
-        return listing;
+        return await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? listing;
     }
 
     public async Task<Listing> ApproveListingAsync(Guid id, CancellationToken cancellationToken = default)
@@ -155,7 +162,8 @@ public class ListingService : IListingService
 
         listing.Approve();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
-        return listing;
+        return await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? listing;
     }
 
     public async Task<Listing> RejectListingAsync(Guid id, string? reason = null, CancellationToken cancellationToken = default)
@@ -165,7 +173,8 @@ public class ListingService : IListingService
 
         listing.Reject(reason);
         await _listingRepository.UpdateAsync(listing, cancellationToken);
-        return listing;
+        return await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? listing;
     }
 
     public async Task<IEnumerable<Listing>> GetPendingListingsAsync(CancellationToken cancellationToken = default)

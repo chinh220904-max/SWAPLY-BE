@@ -28,9 +28,9 @@ public class SubscriptionConfiguration : IEntityTypeConfiguration<Subscription>
         // Index for checking active subscriptions
         builder.HasIndex(s => new { s.UserId, s.Status, s.ExpiresAt });
 
-        builder.HasOne(s => s.PremiumPlan)
+        builder.HasOne(s => s.Package)
             .WithMany(p => p.Subscriptions)
-            .HasForeignKey(s => s.PremiumPlanId)
+            .HasForeignKey(s => s.PackageId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Note: 1:1 with Payment is configured in PaymentConfiguration

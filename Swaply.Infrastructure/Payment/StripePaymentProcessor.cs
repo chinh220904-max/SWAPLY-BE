@@ -1,6 +1,6 @@
 using Swaply.Application.PremiumManagement;
 
-namespace Swaply.Infrastructure.Payment;
+namespace Swaply.Infrastructure.Payments;
 
 public class StripePaymentProcessor : IPaymentProcessor
 {

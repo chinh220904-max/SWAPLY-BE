@@ -1,29 +1,57 @@
+using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
+using Swaply.Domain.Repositories;
+using Swaply.Domain.ValueObjects;
+
 namespace Swaply.Application.PremiumManagement;
 
 public class PremiumService : IPremiumService
 {
-    private readonly IPaymentProcessor _paymentProcessor;
+    private readonly IPaymentGateway _paymentGateway;
+    private readonly IPaymentRepository _paymentRepository;
+    private readonly ISubscriptionRepository _subscriptionRepository;
 
-    public PremiumService(IPaymentProcessor paymentProcessor)
+    public PremiumService(IPaymentGateway paymentGateway, IPaymentRepository paymentRepository, ISubscriptionRepository subscriptionRepository)
     {
-        _paymentProcessor = paymentProcessor;
+        _paymentGateway = paymentGateway;
+        _paymentRepository = paymentRepository;
+        _subscriptionRepository = subscriptionRepository;
     }
 
-    public async Task<bool> UpgradeToPremiumAsync(string userId, string paymentMethodId, CancellationToken cancellationToken = default)
+    public async Task<Payment> StartUpgradeAsync(string userId, decimal amount, CancellationToken cancellationToken = default)
     {
-        // 99,000 VND fee for premium upgrade
-        var result = await _paymentProcessor.ProcessPaymentAsync(99000, "VND", paymentMethodId, cancellationToken);
-        if (result)
+        if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out var userGuid))
         {
-            // Update user status in database (mocked)
-            return true;
+            throw new ArgumentException("User id is required.", nameof(userId));
         }
-        return false;
+
+        var money = new Money(amount, "VND");
+
+        var plan = await _subscriptionRepository.GetActivePackageAsync(cancellationToken)
+            ?? throw new InvalidOperationException("Premium plan is not configured.");
+
+        var subscription = new Subscription(userGuid, plan.Id, plan.DurationDays);
+        await _subscriptionRepository.AddAsync(subscription, cancellationToken);
+
+        var payment = new Payment(userGuid, subscription.Id, money, PaymentMethod.VNPay, "Upgrade premium", subscription.ExpiresAt);
+        await _paymentRepository.AddAsync(payment, cancellationToken);
+
+        var payUrl = await _paymentGateway.CreatePaymentAsync(payment, cancellationToken);
+        payment.SetPayUrl(payUrl);
+
+        await _paymentRepository.UpdateAsync(payment, cancellationToken);
+
+        return payment;
     }
 
-    public Task<bool> IsPremiumUserAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsPremiumUserAsync(string userId, CancellationToken cancellationToken = default)
     {
-        // Simulated check
-        return Task.FromResult(userId == "premium_user");
+        if (string.IsNullOrWhiteSpace(userId) || !Guid.TryParse(userId, out var userGuid))
+        {
+            return false;
+        }
+
+        var subscription = await _subscriptionRepository.GetActiveByUserIdAsync(userGuid, cancellationToken);
+        return subscription is not null;
     }
 }

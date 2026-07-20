@@ -30,6 +30,24 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Swaply.Domain.Entit
         builder.Property(p => p.TransactionId)
             .HasMaxLength(200);
 
+        builder.Property(p => p.ProviderTransactionId)
+            .HasMaxLength(200);
+
+        builder.Property(p => p.OrderInfo)
+            .HasMaxLength(255);
+
+        builder.Property(p => p.PayUrl)
+            .HasMaxLength(1000);
+
+        builder.Property(p => p.IpAddress)
+            .HasMaxLength(45);
+
+        builder.Property(p => p.ReturnQuery)
+            .HasMaxLength(2000);
+
+        builder.Property(p => p.IpnQuery)
+            .HasMaxLength(2000);
+
         builder.Property(p => p.Status)
             .IsRequired()
             .HasConversion<string>()
@@ -43,6 +61,12 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Swaply.Domain.Entit
 
         builder.Property(p => p.CreatedAt)
             .IsRequired();
+
+        builder.Property(p => p.PaidAt)
+            .IsRequired(false);
+
+        builder.Property(p => p.ExpiresAt)
+            .IsRequired(false);
 
         // 1:1 relationship with Subscription
         builder.HasOne(p => p.Subscription)

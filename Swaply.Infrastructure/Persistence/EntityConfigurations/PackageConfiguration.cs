@@ -4,11 +4,11 @@ using Swaply.Domain.Entities;
 
 namespace Swaply.Infrastructure.Persistence.EntityConfigurations;
 
-public class PremiumPlanConfiguration : IEntityTypeConfiguration<PremiumPlan>
+public class PackageConfiguration : IEntityTypeConfiguration<Package>
 {
-    public void Configure(EntityTypeBuilder<PremiumPlan> builder)
+    public void Configure(EntityTypeBuilder<Package> builder)
     {
-        builder.ToTable("PremiumPlans");
+        builder.ToTable("Packages");
 
         builder.HasKey(p => p.Id);
 
@@ -37,8 +37,8 @@ public class PremiumPlanConfiguration : IEntityTypeConfiguration<PremiumPlan>
             .HasDefaultValue(true);
 
         builder.HasData(
-            new PremiumPlan(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Basic", "Basic plan with 5 listings limit", 99000m, 30, 5),
-            new PremiumPlan(Guid.Parse("22222222-2222-2222-2222-222222222222"), "Premium", "Premium plan with unlimited listings", 199000m, 30, 999)
+            new Package(Guid.Parse("11111111-1111-1111-1111-111111111111"), "Basic", "Basic plan with 5 listings limit", 99000m, 30, 5),
+            new Package(Guid.Parse("22222222-2222-2222-2222-222222222222"), "Premium", "Premium plan with unlimited listings", 199000m, 30, 999)
         );
     }
 }

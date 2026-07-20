@@ -20,9 +20,10 @@ using Swaply.Domain.Repositories;
 using Swaply.Infrastructure.Cloudinary;
 using Swaply.Infrastructure.Email;
 using Swaply.Infrastructure.Identity;
-using Swaply.Infrastructure.Payment;
+using Swaply.Infrastructure.Payments;
 using Swaply.Infrastructure.Persistence;
 using Swaply.Infrastructure.RepositoryImplementation;
+using Swaply.Domain.Options;
 
 namespace Swaply.Api.DependencyInjection;
 
@@ -70,6 +71,8 @@ public static class DependencyInjection
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 
         // Identity Services
         services.AddScoped<IIdentityService, IdentityService>();
@@ -92,6 +95,8 @@ public static class DependencyInjection
 
         // Payment
         services.AddScoped<IPaymentProcessor, StripePaymentProcessor>();
+        services.Configure<VNPayOptions>(configuration.GetSection("VNPay"));
+        services.AddScoped<IPaymentGateway, VNPayPaymentGateway>();
 
         // Notification (SignalR) - implements ChatManagement.INotificationService and NotificationManagement.IRealTimeNotificationService
         services.AddScoped<global::Swaply.Application.ChatManagement.INotificationService, Swaply.Api.Services.SignalRNotificationService>();

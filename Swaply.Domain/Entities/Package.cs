@@ -1,6 +1,6 @@
 namespace Swaply.Domain.Entities;
 
-public class PremiumPlan
+public class Package
 {
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -14,9 +14,9 @@ public class PremiumPlan
     public IReadOnlyCollection<Subscription> Subscriptions => _subscriptions.AsReadOnly();
 
     // EF Core constructor
-    private PremiumPlan() { }
+    private Package() { }
 
-    public PremiumPlan(Guid id, string name, string description, decimal price, int durationDays, int maxListings)
+    public Package(Guid id, string name, string description, decimal price, int durationDays, int maxListings)
     {
         Id = id;
         Name = name;

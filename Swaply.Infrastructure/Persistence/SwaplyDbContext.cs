@@ -19,7 +19,7 @@ public class SwaplyDbContext : DbContext
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Notification> Notifications => Set<Notification>();
-    public DbSet<PremiumPlan> PremiumPlans => Set<PremiumPlan>();
+    public DbSet<Package> Packages => Set<Package>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<Swaply.Domain.Entities.Payment> Payments => Set<Swaply.Domain.Entities.Payment>();
     public DbSet<Report> Reports => Set<Report>();
