@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Swaply.Application.AdminManagement;
-using Swaply.Application.PremiumManagement;
 using Swaply.Domain.Enums;
 using Swaply.Domain.Repositories;
 
@@ -17,7 +16,7 @@ public class AdminUserService : IAdminUserService
     private readonly IExchangeRepository _exchangeRepository;
     private readonly IReviewRepository _reviewRepository;
     private readonly IReportRepository _reportRepository;
-    private readonly IPremiumService _premiumService;
+    private readonly IBoostSubscriptionRepository _boostSubscriptionRepository;
 
     public AdminUserService(
         IUserRepository userRepository,
@@ -25,14 +24,14 @@ public class AdminUserService : IAdminUserService
         IExchangeRepository exchangeRepository,
         IReviewRepository reviewRepository,
         IReportRepository reportRepository,
-        IPremiumService premiumService)
+        IBoostSubscriptionRepository boostSubscriptionRepository)
     {
         _userRepository = userRepository;
         _listingRepository = listingRepository;
         _exchangeRepository = exchangeRepository;
         _reviewRepository = reviewRepository;
         _reportRepository = reportRepository;
-        _premiumService = premiumService;
+        _boostSubscriptionRepository = boostSubscriptionRepository;
     }
 
     public async Task<AdminUserListItemResponse?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -42,7 +41,7 @@ public class AdminUserService : IAdminUserService
             return null;
 
         var role = await _userRepository.GetRoleByNameAsync("Admin", cancellationToken);
-        var isPremium = await _premiumService.IsPremiumUserAsync(user.Id.ToString(), cancellationToken);
+        var isPremium = await IsPremiumUserAsync(userId, cancellationToken);
 
         return new AdminUserListItemResponse(
             user.Id,
@@ -61,15 +60,20 @@ public class AdminUserService : IAdminUserService
         var totalCount = await _userRepository.SearchUsersCountAsync(keyword, cancellationToken);
         var roleAdmin = await _userRepository.GetRoleByNameAsync("Admin", cancellationToken);
 
-        var results = items.Select(u => new AdminUserListItemResponse(
-            u.Id,
-            u.FullName ?? string.Empty,
-            u.Email,
-            roleAdmin != null && u.RoleId == roleAdmin.Id ? "Admin" : "User",
-            u.IsBanned ? "Locked" : "Active",
-            false,
-            u.CreatedAt
-        )).ToList();
+        var results = new List<AdminUserListItemResponse>();
+        foreach (var u in items)
+        {
+            var isPremium = await IsPremiumUserAsync(u.Id, cancellationToken);
+            results.Add(new AdminUserListItemResponse(
+                u.Id,
+                u.FullName ?? string.Empty,
+                u.Email,
+                roleAdmin != null && u.RoleId == roleAdmin.Id ? "Admin" : "User",
+                u.IsBanned ? "Locked" : "Active",
+                isPremium,
+                u.CreatedAt
+            ));
+        }
 
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
@@ -131,7 +135,7 @@ public class AdminUserService : IAdminUserService
         var reports = await _reportRepository.GetMyReportsAsync(userId, 1, int.MaxValue, cancellationToken);
         var reportCount = reports.Items.Count();
 
-        var isPremium = await _premiumService.IsPremiumUserAsync(user.Id.ToString(), cancellationToken);
+        var isPremium = await IsPremiumUserAsync(userId, cancellationToken);
 
         return new AdminUserDetailResponse(
             user.Id,
@@ -147,5 +151,11 @@ public class AdminUserService : IAdminUserService
             reviewCount,
             reportCount
         );
+    }
+
+    private async Task<bool> IsPremiumUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var subscription = await _boostSubscriptionRepository.GetActiveByUserIdAsync(userId, cancellationToken);
+        return subscription != null && subscription.IsActive();
     }
 }

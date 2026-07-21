@@ -5,9 +5,11 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Swaply.Api.BackgroundServices;
 using Swaply.Api.DependencyInjection;
 using Swaply.Api.Hubs;
 using Swaply.Api.Middleware;
+using Swaply.Application.BoostManagement;
 using Swaply.Infrastructure.Persistence;
 
 // Clear default claim type mappings to preserve original claim types
@@ -22,10 +24,17 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 builder.Services.AddSignalR();
+builder.Services.AddHttpClient();
 
 // Register Clean Architecture Layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Register Boost Management
+builder.Services.AddScoped<IBoostService, BoostService>();
+
+// Register Background Services
+builder.Services.AddHostedService<AutoBoostBackgroundService>();
 
 // Configure JWT Authentication
 var jwtSettings = new Swaply.Infrastructure.Identity.JwtSettings
@@ -175,6 +184,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 // Global exception handling middleware
 app.UseMiddleware<ExceptionHandlingMiddleware>();

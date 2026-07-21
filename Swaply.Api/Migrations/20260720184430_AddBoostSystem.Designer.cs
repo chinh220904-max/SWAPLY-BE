@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Swaply.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Swaply.Infrastructure.Persistence;
 namespace Swaply.Api.Migrations
 {
     [DbContext(typeof(SwaplyDbContext))]
-    partial class SwaplyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260720184430_AddBoostSystem")]
+    partial class AddBoostSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -576,6 +579,66 @@ namespace Swaply.Api.Migrations
                     b.ToTable("OtpCodes", (string)null);
                 });
 
+            modelBuilder.Entity("Swaply.Domain.Entities.Package", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DurationDays")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("MaxListings")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Packages", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Description = "Basic plan with 5 listings limit",
+                            DurationDays = 30,
+                            IsActive = true,
+                            MaxListings = 5,
+                            Name = "Basic",
+                            Price = 99000m
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            Description = "Premium plan with unlimited listings",
+                            DurationDays = 30,
+                            IsActive = true,
+                            MaxListings = 999,
+                            Name = "Premium",
+                            Price = 199000m
+                        });
+                });
+
             modelBuilder.Entity("Swaply.Domain.Entities.Payment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -642,6 +705,9 @@ namespace Swaply.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique();
 
                     b.ToTable("Payments", (string)null);
                 });
@@ -772,6 +838,40 @@ namespace Swaply.Api.Migrations
                             Description = "Administrator with full access",
                             Name = "Admin"
                         });
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.Subscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Active");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PackageId");
+
+                    b.HasIndex("UserId", "Status", "ExpiresAt");
+
+                    b.ToTable("Subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("Swaply.Domain.Entities.User", b =>
@@ -1142,6 +1242,12 @@ namespace Swaply.Api.Migrations
 
             modelBuilder.Entity("Swaply.Domain.Entities.Payment", b =>
                 {
+                    b.HasOne("Swaply.Domain.Entities.Subscription", "Subscription")
+                        .WithOne("Payment")
+                        .HasForeignKey("Swaply.Domain.Entities.Payment", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.OwnsOne("Swaply.Domain.ValueObjects.Money", "Amount", b1 =>
                         {
                             b1.Property<Guid>("PaymentId")
@@ -1169,6 +1275,8 @@ namespace Swaply.Api.Migrations
 
                     b.Navigation("Amount")
                         .IsRequired();
+
+                    b.Navigation("Subscription");
                 });
 
             modelBuilder.Entity("Swaply.Domain.Entities.Report", b =>
@@ -1207,6 +1315,25 @@ namespace Swaply.Api.Migrations
                     b.Navigation("Reviewee");
 
                     b.Navigation("Reviewer");
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.Subscription", b =>
+                {
+                    b.HasOne("Swaply.Domain.Entities.Package", "Package")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Swaply.Domain.Entities.User", "User")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Package");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Swaply.Domain.Entities.User", b =>
@@ -1271,9 +1398,19 @@ namespace Swaply.Api.Migrations
                     b.Navigation("SourceMatches");
                 });
 
+            modelBuilder.Entity("Swaply.Domain.Entities.Package", b =>
+                {
+                    b.Navigation("Subscriptions");
+                });
+
             modelBuilder.Entity("Swaply.Domain.Entities.Role", b =>
                 {
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.Subscription", b =>
+                {
+                    b.Navigation("Payment");
                 });
 
             modelBuilder.Entity("Swaply.Domain.Entities.User", b =>
@@ -1291,6 +1428,8 @@ namespace Swaply.Api.Migrations
                     b.Navigation("ReviewsGiven");
 
                     b.Navigation("ReviewsReceived");
+
+                    b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618
         }

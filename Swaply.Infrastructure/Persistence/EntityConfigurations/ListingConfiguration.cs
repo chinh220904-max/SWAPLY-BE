@@ -94,5 +94,18 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
             .WithOne(f => f.Listing)
             .HasForeignKey(f => f.ListingId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Boost fields
+        builder.Property(l => l.BoostSubscriptionId)
+            .IsRequired(false);
+
+        builder.Property(l => l.BoostedAt)
+            .IsRequired(false);
+
+        builder.Property(l => l.BoostExpiresAt)
+            .IsRequired(false);
+
+        builder.Property(l => l.BoostPriority)
+            .IsRequired(false);
     }
 }

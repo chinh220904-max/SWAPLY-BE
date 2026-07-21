@@ -22,23 +22,8 @@ public class Payment
     public DateTime? PaidAt { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
 
-    // Navigation property (1:1 from Payment side)
-    public Subscription? Subscription { get; private set; }
-
     // EF Core constructor
     private Payment() { }
-
-    public Payment(Guid subscriptionId, Money amount, PaymentMethod method)
-    {
-        Id = Guid.NewGuid();
-        SubscriptionId = subscriptionId;
-        Amount = amount;
-        Method = method;
-        Status = PaymentStatus.Pending;
-        TransactionId = string.Empty;
-        ProviderTransactionId = string.Empty;
-        CreatedAt = DateTime.UtcNow;
-    }
 
     public Payment(Guid userId, Guid subscriptionId, Money amount, PaymentMethod method, string orderInfo, DateTime? expiresAt = null)
     {
@@ -92,5 +77,10 @@ public class Payment
     public void MarkAsFailed()
     {
         Status = PaymentStatus.Failed;
+    }
+
+    public void Cancel()
+    {
+        Status = PaymentStatus.Cancelled;
     }
 }

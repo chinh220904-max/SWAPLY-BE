@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mock Payment · Swaply</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --success: #10b981;
+      --success-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #f59e0b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
+                   Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.25);
+      max-width: 460px;
+      width: 100%;
+      overflow: hidden;
+      animation: fadeIn .35s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      padding: 28px 32px 22px;
+      color: #fff;
+      position: relative;
+    }
+
+    .header .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,.2);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      margin-bottom: 10px;
+    }
+    .header .badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 0 4px rgba(251,191,36,.25);
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      opacity: .85;
+    }
+
+    .body { padding: 28px 32px; }
+
+    .summary {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 22px;
+    }
+    .summary .label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .summary .order {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .summary .amount-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+    .summary .amount-row .total-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .summary .amount-row .total {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -.5px;
+    }
+    .summary .amount-row .total .currency {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    button {
+      padding: 14px 18px;
+      border: 0;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    button:active { transform: scale(.97); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-pay {
+      background: var(--success);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(16,185,129,.35);
+    }
+    .btn-pay:hover:not(:disabled) {
+      background: var(--success-hover);
+      box-shadow: 0 6px 18px rgba(16,185,129,.45);
+    }
+    .btn-cancel {
+      background: #fff;
+      color: var(--danger);
+      border: 1.5px solid #fecaca;
+    }
+    .btn-cancel:hover:not(:disabled) {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+      box-shadow: 0 4px 14px rgba(239,68,68,.3);
+    }
+
+    .status {
+      text-align: center;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      background: #f1f5f9;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .status.pending  { background: #fef3c7; color: #92400e; }
+    .status.paid     { background: #d1fae5; color: #065f46; }
+    .status.failed   { background: #fee2e2; color: #991b1b; }
+
+    .status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .status.pending .dot { animation: pulse 1.4s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .3; }
+    }
+
+    .footer {
+      padding: 14px 32px 18px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      background: #fafbfc;
+    }
+    .footer .lock {
+      display: inline-block;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <span class="badge">Môi trường thử nghiệm</span>
+      <h1>Thanh toán đơn hàng</h1>
+      <p>Vui lòng xác nhận để hoàn tất giao dịch</p>
+    </div>
+
+    <div class="body">
+      <div class="summary">
+        <div class="label">Đơn hàng</div>
+        <div class="order">{{ORDER_INFO}}</div>
+
+        <div class="amount-row">
+          <span class="total-label">Tổng cộng</span>
+          <span class="total">{{AMOUNT}}<span class="currency">{{CURRENCY}}</span></span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-pay" id="btnPay" onclick="payNow()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Thanh toán
+        </button>
+        <button class="btn-cancel" id="btnCancel" onclick="cancelPay()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Huỷ bỏ
+        </button>
+      </div>
+
+      <div class="status" id="status">
+        <span class="dot"></span>
+        <span>Trạng thái: <b id="statusText">Đang chờ thanh toán</b></span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span class="lock">🔒</span> Giao dịch mô phỏng · Chỉ dùng cho dev/test
+    </div>
+  </div>
+
+  <script>
+    const paymentRef = "{{PAYMENT_REF}}";
+
+    function setStatus(text, type) {
+      const el = document.getElementById('status');
+      el.className = 'status ' + type;
+      document.getElementById('statusText').innerText = text;
+    }
+
+    function disableButtons() {
+      document.getElementById('btnPay').disabled = true;
+      document.getElementById('btnCancel').disabled = true;
+    }
+
+    async function payNow() {
+      disableButtons();
+      setStatus('Đang xử lý...', 'pending');
+      try {
+        const r = await fetch("/api/Payments/mock-pay/confirm?ref=" + encodeURIComponent(paymentRef), { method: 'POST' });
+        const data = await r.json();
+        if (data.status === 'Paid') {
+          setStatus('Thanh toán thành công! Đang chuyển hướng...', 'paid');
+          setTimeout(() => location.href = '/api/Payments/return?ref=' + encodeURIComponent(paymentRef), 1200);
+        } else {
+          setStatus('Không thể thanh toán: ' + (data.message || 'unknown'), 'failed');
+        }
+      } catch (e) {
+        setStatus('Lỗi kết nối, thử lại sau', 'failed');
+      }
+    }
+
+    async function cancelPay() {
+      disableButtons();
+      setStatus('Đang huỷ...', 'pending');
+      try {
+        const r = await fetch("/api/Payments/mock-pay/cancel?ref=" + encodeURIComponent(paymentRef), { method: 'POST' });
+        const data = await r.json();
+        if (data.status === 'Failed') {
+          setStatus('Đã huỷ thanh toán', 'failed');
+        } else {
+          setStatus('Trạng thái: ' + (data.status || 'unknown'), 'failed');
+        }
+      } catch (e) {
+        setStatus('Lỗi kết nối, thử lại sau', 'failed');
+      }
+    }
+  </script>
+</body>
+</html>

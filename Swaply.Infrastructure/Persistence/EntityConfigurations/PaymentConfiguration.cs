@@ -67,11 +67,5 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Swaply.Domain.Entit
 
         builder.Property(p => p.ExpiresAt)
             .IsRequired(false);
-
-        // 1:1 relationship with Subscription
-        builder.HasOne(p => p.Subscription)
-            .WithOne(s => s.Payment)
-            .HasForeignKey<Swaply.Domain.Entities.Payment>(p => p.SubscriptionId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

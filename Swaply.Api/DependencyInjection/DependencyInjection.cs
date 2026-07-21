@@ -23,7 +23,6 @@ using Swaply.Infrastructure.Identity;
 using Swaply.Infrastructure.Payments;
 using Swaply.Infrastructure.Persistence;
 using Swaply.Infrastructure.RepositoryImplementation;
-using Swaply.Domain.Options;
 
 namespace Swaply.Api.DependencyInjection;
 
@@ -35,7 +34,6 @@ public static class DependencyInjection
 
         services.AddScoped<IListingService, ListingService>();
         services.AddScoped<IExchangeService, ExchangeService>();
-        services.AddScoped<IPremiumService, PremiumService>();
         services.AddScoped<IChatService, ChatService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IConversationService, ConversationService>();
@@ -52,13 +50,11 @@ public static class DependencyInjection
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? "Server=.\\SQLEXPRESS;Database=SwaplyDb;Trusted_Connection=True;TrustServerCertificate=True";
-        // Persistence — real EF Core DbContext
         services.AddDbContext<SwaplyDbContext>(options =>
         {
             options.UseSqlServer(connectionString, b => b.MigrationsAssembly("Swaply.Api"));
         });
 
-        // Repositories
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IListingImageRepository, ListingImageRepository>();
         services.AddScoped<IExchangeRepository, ExchangeRepository>();
@@ -72,9 +68,13 @@ public static class DependencyInjection
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
-        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 
-        // Identity Services
+        services.AddScoped<IBoostPackageRepository, BoostPackageRepository>();
+        services.AddScoped<IBoostPackageGoldenHourRepository, BoostPackageGoldenHourRepository>();
+        services.AddScoped<IBoostSubscriptionRepository, BoostSubscriptionRepository>();
+        services.AddScoped<IBoostHistoryRepository, BoostHistoryRepository>();
+        services.AddScoped<IUserMonthlyQuotaRepository, UserMonthlyQuotaRepository>();
+
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddSingleton<ITokenService>(sp =>
         {
@@ -89,20 +89,16 @@ public static class DependencyInjection
             return new TokenService(jwtSettings);
         });
 
-        // Email Service
         services.Configure<GmailOptions>(configuration.GetSection(GmailOptions.SectionName));
         services.AddScoped<IEmailService, EmailService>();
 
-        // Payment
         services.AddScoped<IPaymentProcessor, StripePaymentProcessor>();
-        services.Configure<VNPayOptions>(configuration.GetSection("VNPay"));
-        services.AddScoped<IPaymentGateway, VNPayPaymentGateway>();
 
-        // Notification (SignalR) - implements ChatManagement.INotificationService and NotificationManagement.IRealTimeNotificationService
+        services.AddScoped<IPaymentGateway, MockPaymentGateway>();
+
         services.AddScoped<global::Swaply.Application.ChatManagement.INotificationService, Swaply.Api.Services.SignalRNotificationService>();
         services.AddScoped<Swaply.Application.NotificationManagement.IRealTimeNotificationService, Swaply.Api.Services.SignalRNotificationService>();
 
-        // Image upload (Cloudinary)
         services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
         services.AddScoped<IImageUploadService, CloudinaryImageService>();
 
