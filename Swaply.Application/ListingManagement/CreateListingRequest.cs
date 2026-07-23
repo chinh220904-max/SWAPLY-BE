@@ -82,16 +82,23 @@ public record ListingImageResponse(
 public record ListingSummaryResponse(
     Guid Id,
     string Title,
+    string Description,
+    Guid CategoryId,
+    string CategoryName,
     decimal EstimatedValue,
     string Currency,
     ItemCondition Condition,
+    string ConditionName,
+    string Brand,
+    string ExchangeWish,
+    decimal? CashTopUpAmount,
+    string CashTopUpCurrency,
     string Location,
     int FavoriteCount,
     string PrimaryImageUrl,
     string OwnerName,
     DateTime CreatedAt,
-    Guid CategoryId,
-    string CategoryName
+    ListingStatus Status
 );
 
 public record PagedListResponse<T>(

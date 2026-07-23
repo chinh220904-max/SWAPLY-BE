@@ -220,16 +220,23 @@ public class ListingService : IListingService
         var items = listings.Select(l => new ListingSummaryResponse(
             l.Id,
             l.Title,
+            l.Description,
+            l.CategoryId,
+            l.Category?.Name ?? "",
             l.EstimatedValue.Amount,
             l.EstimatedValue.Currency,
             l.Condition,
+            l.Condition.ToString(),
+            l.Brand,
+            l.ExchangeWish,
+            l.CashTopUp?.Amount,
+            l.CashTopUp?.Currency ?? "VND",
             l.Location,
             l.FavoriteCount,
             l.Images.FirstOrDefault()?.ImageUrl ?? "",
             l.Owner?.FullName ?? "",
             l.CreatedAt,
-            l.CategoryId,
-            l.Category?.Name ?? ""
+            l.Status
         )).ToList();
 
         var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
