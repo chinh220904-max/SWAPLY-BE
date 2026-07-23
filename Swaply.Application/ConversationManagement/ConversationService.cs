@@ -152,6 +152,9 @@ public class ConversationService : IConversationService
         if (listing == null)
             throw new InvalidOperationException("Listing not found.");
 
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is deleted.");
+
         if (listing.OwnerId != request.OtherUserId)
             throw new InvalidOperationException("You can only start a conversation with the listing owner.");
 

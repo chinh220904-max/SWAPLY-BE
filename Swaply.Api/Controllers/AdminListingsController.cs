@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swaply.Application.ListingManagement;
 using Swaply.Domain.Entities;
+using Swaply.Domain.Enums;
 using Swaply.Domain.Repositories;
 
 namespace Swaply.Api.Controllers;
@@ -26,23 +27,124 @@ public class AdminListingsController : ControllerBase
         _userRepository = userRepository;
     }
 
-    /// <summary>
-    /// Get all listings pending admin review
-    /// </summary>
-    [HttpGet("pending")]
-    public async Task<IActionResult> GetPendingListings()
+    [HttpGet]
+    public async Task<IActionResult> SearchListings([FromQuery] AdminListingSearchRequest? request)
     {
         var userId = GetCurrentUserId();
         if (!await IsAdminAsync(userId))
             return Forbid();
 
-        var pending = await _listingService.GetPendingListingsAsync();
-        return Ok(pending.Select(MapToSummaryResponse));
+        request ??= new AdminListingSearchRequest();
+
+        var result = await _listingService.SearchAdminListingsAsync(
+            request.Keyword,
+            request.Status,
+            request.SortBy,
+            request.Page,
+            request.PageSize);
+
+        return Ok(result);
     }
 
-    /// <summary>
-    /// Approve a pending listing (moves to Active automatically)
-    /// </summary>
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetListingDetail(Guid id)
+    {
+        var userId = GetCurrentUserId();
+        if (!await IsAdminAsync(userId))
+            return Forbid();
+
+        var detail = await _listingService.GetAdminListingDetailAsync(id);
+        if (detail == null)
+            return NotFound(new { error = "Listing not found." });
+
+        return Ok(detail);
+    }
+
+    [HttpPut("{id:guid}/hide")]
+    public async Task<IActionResult> HideListing(Guid id)
+    {
+        var userId = GetCurrentUserId();
+        if (!await IsAdminAsync(userId))
+            return Forbid();
+
+        try
+        {
+            var listing = await _listingService.HideListingAsync(id);
+            return Ok(new { id = listing.Id, status = listing.Status.ToString() });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { error = "Listing not found." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("{id:guid}/restore")]
+    public async Task<IActionResult> RestoreListing(Guid id)
+    {
+        var userId = GetCurrentUserId();
+        if (!await IsAdminAsync(userId))
+            return Forbid();
+
+        try
+        {
+            var listing = await _listingService.RestoreListingAsync(id);
+            return Ok(new { id = listing.Id, status = listing.Status.ToString() });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { error = "Listing not found." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> SoftDeleteListing(Guid id)
+    {
+        var userId = GetCurrentUserId();
+        if (!await IsAdminAsync(userId))
+            return Forbid();
+
+        try
+        {
+            await _listingService.SoftDeleteListingAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { error = "Listing not found." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("deleted")]
+    public async Task<IActionResult> GetDeletedListings([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var userId = GetCurrentUserId();
+        if (!await IsAdminAsync(userId))
+            return Forbid();
+
+        var deleted = await _listingService.GetDeletedListingsAsync();
+        var items = deleted.Select(MapToDeletedSummary).ToList();
+
+        return Ok(new PagedListResponse<object>(
+            items.Cast<object>().ToList(),
+            items.Count,
+            page,
+            pageSize,
+            (int)Math.Ceiling(items.Count / (double)pageSize)
+        ));
+    }
+
     [HttpPost("{id:guid}/approve")]
     public async Task<IActionResult> ApproveListing(Guid id)
     {
@@ -65,9 +167,6 @@ public class AdminListingsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Reject a pending listing (sends back to Draft)
-    /// </summary>
     [HttpPost("{id:guid}/reject")]
     public async Task<IActionResult> RejectListing(Guid id, [FromBody] RejectListingRequest? request)
     {
@@ -93,6 +192,17 @@ public class AdminListingsController : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPendingListings()
+    {
+        var userId = GetCurrentUserId();
+        if (!await IsAdminAsync(userId))
+            return Forbid();
+
+        var pending = await _listingService.GetPendingListingsAsync();
+        return Ok(pending.Select(MapToSummaryResponse));
     }
 
     private Guid GetCurrentUserId()
@@ -160,6 +270,25 @@ public class AdminListingsController : ControllerBase
         expiresAt = l.ExpiresAt,
         rejectionReason = l.RejectionReason
     };
+
+    private static object MapToDeletedSummary(Listing l) => new
+    {
+        id = l.Id,
+        title = l.Title,
+        ownerName = l.Owner?.FullName ?? string.Empty,
+        status = l.Status.ToString(),
+        deleted = l.IsDeleted,
+        createdAt = l.CreatedAt,
+        updatedAt = l.UpdatedAt
+    };
 }
+
+public record AdminListingSearchRequest(
+    string? Keyword = null,
+    ListingStatus? Status = null,
+    string? SortBy = "newest",
+    int Page = 1,
+    int PageSize = 20
+);
 
 public record RejectListingRequest(string? Reason);

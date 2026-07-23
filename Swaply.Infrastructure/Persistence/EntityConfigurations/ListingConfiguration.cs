@@ -14,6 +14,8 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
 
         builder.HasKey(l => l.Id);
 
+        builder.HasQueryFilter(l => !l.IsDeleted);
+
         builder.Property(l => l.Title)
             .IsRequired()
             .HasMaxLength(200);
@@ -63,6 +65,10 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
 
         builder.Property(l => l.CreatedAt)
             .IsRequired();
+
+        builder.Property(l => l.IsDeleted)
+            .IsRequired()
+            .HasDefaultValue(false);
 
         // No delete cascade on OwnerId — User->Listing is Restrict (handled in UserConfiguration)
         builder.HasMany(l => l.Images)

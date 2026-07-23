@@ -46,6 +46,12 @@ public class ExchangeService : IExchangeService
         if (receiverListing == null)
             throw new ListingNotFoundException(request.ReceiverListingId);
 
+        if (proposerListing.IsDeleted)
+            throw new InvalidExchangeStateException("Proposer listing is deleted.");
+
+        if (receiverListing.IsDeleted)
+            throw new InvalidExchangeStateException("Receiver listing is deleted.");
+
         if (proposerListing.OwnerId != proposerId)
             throw new UnauthorizedExchangeActionException("User does not own the proposer listing.");
 
@@ -188,6 +194,9 @@ public class ExchangeService : IExchangeService
 
         if (proposerListing != null && receiverListing != null)
         {
+            if (proposerListing.IsDeleted || receiverListing.IsDeleted)
+                throw new InvalidExchangeStateException("One or more listings are deleted.");
+
             proposerListing.MarkAsExchanged();
             receiverListing.MarkAsExchanged();
             await _listingRepository.UpdateAsync(proposerListing, cancellationToken);
