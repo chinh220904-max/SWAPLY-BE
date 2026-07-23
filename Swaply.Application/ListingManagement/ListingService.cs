@@ -227,7 +227,9 @@ public class ListingService : IListingService
             l.FavoriteCount,
             l.Images.FirstOrDefault()?.ImageUrl ?? "",
             l.Owner?.FullName ?? "",
-            l.CreatedAt
+            l.CreatedAt,
+            l.CategoryId,
+            l.Category?.Name ?? ""
         )).ToList();
 
         var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);

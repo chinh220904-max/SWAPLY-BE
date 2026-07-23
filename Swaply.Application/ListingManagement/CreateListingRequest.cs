@@ -89,7 +89,9 @@ public record ListingSummaryResponse(
     int FavoriteCount,
     string PrimaryImageUrl,
     string OwnerName,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    Guid CategoryId,
+    string CategoryName
 );
 
 public record PagedListResponse<T>(
