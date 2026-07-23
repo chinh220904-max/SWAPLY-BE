@@ -22,5 +22,11 @@ public record ExchangeDto(
     ExchangeStatus Status,
     string? Message,
     DateTime CreatedAt,
-    DateTime? UpdatedAt
+    DateTime? UpdatedAt,
+    Guid? ConversationId,
+    bool ProposerConfirmedComplete,
+    bool ReceiverConfirmedComplete,
+    DateTime? ProposerConfirmedAt,
+    DateTime? ReceiverConfirmedAt,
+    DateTime? CompletedAt
 );

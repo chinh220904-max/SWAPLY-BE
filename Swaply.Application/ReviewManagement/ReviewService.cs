@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Swaply.Application.NotificationManagement;
 using Swaply.Domain.Entities;
 using Swaply.Domain.Enums;
@@ -11,17 +12,20 @@ public class ReviewService : IReviewService
     private readonly IExchangeRepository _exchangeRepository;
     private readonly IUserRepository _userRepository;
     private readonly INotificationService _notificationService;
+    private readonly ILogger<ReviewService> _logger;
 
     public ReviewService(
         IReviewRepository reviewRepository,
         IExchangeRepository exchangeRepository,
         IUserRepository userRepository,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        ILogger<ReviewService> logger)
     {
         _reviewRepository = reviewRepository;
         _exchangeRepository = exchangeRepository;
         _userRepository = userRepository;
         _notificationService = notificationService;
+        _logger = logger;
     }
 
     public async Task<ReviewDto> CreateReviewAsync(Guid reviewerId, CreateReviewRequest request, CancellationToken cancellationToken = default)
@@ -59,6 +63,9 @@ public class ReviewService : IReviewService
         if (hasReviewed)
             throw new InvalidOperationException("You have already reviewed this exchange.");
 
+        var reviewer = await _userRepository.GetByIdAsync(reviewerId);
+        var reviewerName = reviewer?.UserName ?? "Someone";
+
         var review = new Review(
             exchangeId: request.ExchangeId,
             reviewerId: reviewerId,
@@ -69,21 +76,55 @@ public class ReviewService : IReviewService
 
         var created = await _reviewRepository.CreateAsync(review, cancellationToken);
 
-        await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
-            UserId: request.RevieweeId,
-            Title: "New Review",
-            Content: "You received a new review.",
-            Type: "NewReview",
-            RelatedEntityId: created.Id,
-            RelatedEntityType: "Review"
-        ), cancellationToken);
+        try
+        {
+            var commentPreview = string.IsNullOrWhiteSpace(request.Comment)
+                ? null
+                : request.Comment.Length > 120 ? request.Comment[..120] + "…" : request.Comment;
+
+            var content = commentPreview != null
+                ? $"{reviewerName} đã đánh giá bạn {request.Rating} sao: {commentPreview}"
+                : $"{reviewerName} đã đánh giá bạn {request.Rating} sao.";
+
+            await _notificationService.CreateNotificationAsync(new CreateNotificationRequest(
+                UserId: request.RevieweeId,
+                Title: "Bạn nhận được đánh giá mới",
+                Content: content,
+                Type: "ReviewReceived",
+                RelatedEntityId: created.Id,
+                RelatedEntityType: "Review"
+            ), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to create ReviewReceived notification for review {ReviewId} targeting user {RevieweeId}. Review was created successfully.",
+                created.Id, request.RevieweeId);
+        }
 
         return ToReviewDto(created);
+    }
+
+    public async Task<ReviewDto?> GetReviewByIdAsync(Guid reviewId, CancellationToken cancellationToken = default)
+    {
+        var review = await _reviewRepository.GetByIdAsync(reviewId, cancellationToken);
+        return review == null ? null : ToReviewDto(review);
     }
 
     public async Task<IEnumerable<ReviewDto>> GetUserReviewsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var reviews = await _reviewRepository.GetReviewsForUserAsync(userId, cancellationToken);
+        return reviews.Select(ToReviewDto);
+    }
+
+    public async Task<IEnumerable<ReviewDto>> GetReceivedReviewsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var reviews = await _reviewRepository.GetReviewsReceivedByUserAsync(userId, cancellationToken);
+        return reviews.Select(ToReviewDto);
+    }
+
+    public async Task<IEnumerable<ReviewDto>> GetGivenReviewsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var reviews = await _reviewRepository.GetReviewsGivenByUserAsync(userId, cancellationToken);
         return reviews.Select(ToReviewDto);
     }
 
@@ -104,6 +145,7 @@ public class ReviewService : IReviewService
             ExchangeId: review.ExchangeId,
             ReviewerId: review.ReviewerId,
             ReviewerName: review.Reviewer?.UserName ?? "Unknown",
+            ReviewerAvatarUrl: review.Reviewer?.AvatarUrl,
             RevieweeId: review.RevieweeId,
             RevieweeName: review.Reviewee?.UserName ?? "Unknown",
             Rating: review.Rating,

@@ -41,6 +41,26 @@ public class ReviewRepository : IReviewRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<Review>> GetReviewsReceivedByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Reviews
+            .Include(r => r.Reviewer)
+            .Include(r => r.Reviewee)
+            .Where(r => r.RevieweeId == userId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Review>> GetReviewsGivenByUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Reviews
+            .Include(r => r.Reviewer)
+            .Include(r => r.Reviewee)
+            .Where(r => r.ReviewerId == userId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<bool> HasUserReviewedExchangeAsync(Guid exchangeId, Guid reviewerId, CancellationToken cancellationToken = default)
     {
         return await _context.Reviews

@@ -45,6 +45,12 @@ public class ConversationConfiguration : IEntityTypeConfiguration<Conversation>
             .HasForeignKey(c => c.RelatedExchangeId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // One Conversation per Exchange — enforces Exchange 1:0..1 Conversation
+        builder.HasIndex(c => c.RelatedExchangeId)
+            .IsUnique()
+            .HasFilter("RelatedExchangeId IS NOT NULL")
+            .HasDatabaseName("IX_Conversations_RelatedExchangeId_Unique");
+
         builder.HasMany(c => c.Messages)
             .WithOne(m => m.Conversation)
             .HasForeignKey(m => m.ConversationId)
