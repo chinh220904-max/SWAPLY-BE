@@ -46,6 +46,12 @@ public class Listing
     private readonly List<MatchingHistory> _matchedAsSource = new();
     public IReadOnlyCollection<MatchingHistory> MatchedAsSource => _matchedAsSource.AsReadOnly();
 
+    // Boost fields
+    public Guid? BoostSubscriptionId { get; private set; }
+    public DateTime? BoostedAt { get; private set; }
+    public DateTime? BoostExpiresAt { get; private set; }
+    public int? BoostPriority { get; private set; }
+
     private readonly List<Favorite> _favorites = new();
     public IReadOnlyCollection<Favorite> Favorites => _favorites.AsReadOnly();
 
@@ -205,5 +211,23 @@ public class Listing
     public void UpdateFavoriteCount()
     {
         FavoriteCount = _favorites.Count;
+    }
+
+    public void SetBoost(Guid boostSubscriptionId, DateTime boostedAt, DateTime expiresAt, int priority)
+    {
+        BoostSubscriptionId = boostSubscriptionId;
+        BoostedAt = boostedAt;
+        BoostExpiresAt = expiresAt;
+        BoostPriority = priority;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ClearBoost()
+    {
+        BoostSubscriptionId = null;
+        BoostedAt = null;
+        BoostExpiresAt = null;
+        BoostPriority = null;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

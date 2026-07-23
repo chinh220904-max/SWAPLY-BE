@@ -19,13 +19,18 @@ public class SwaplyDbContext : DbContext
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Notification> Notifications => Set<Notification>();
-    public DbSet<PremiumPlan> PremiumPlans => Set<PremiumPlan>();
-    public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<Swaply.Domain.Entities.Payment> Payments => Set<Swaply.Domain.Entities.Payment>();
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<MatchingHistory> MatchingHistories => Set<MatchingHistory>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
+
+    // Boost entities
+    public DbSet<BoostPackage> BoostPackages => Set<BoostPackage>();
+    public DbSet<BoostPackageGoldenHour> BoostPackageGoldenHours => Set<BoostPackageGoldenHour>();
+    public DbSet<BoostSubscription> BoostSubscriptions => Set<BoostSubscription>();
+    public DbSet<BoostHistory> BoostHistories => Set<BoostHistory>();
+    public DbSet<UserMonthlyQuota> UserMonthlyQuotas => Set<UserMonthlyQuota>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swaply.Application.BoostManagement;
 using Swaply.Application.ListingManagement;
 using Swaply.Domain.Entities;
 using Swaply.Domain.Enums;
@@ -19,6 +20,7 @@ public class ListingsController : ControllerBase
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUserRepository _userRepository;
     private readonly IImageUploadService _imageUploadService;
+    private readonly IBoostService _boostService;
 
     public ListingsController(
         IListingService listingService,
@@ -26,7 +28,8 @@ public class ListingsController : ControllerBase
         IFavoriteRepository favoriteRepository,
         ICategoryRepository categoryRepository,
         IUserRepository userRepository,
-        IImageUploadService imageUploadService)
+        IImageUploadService imageUploadService,
+        IBoostService boostService)
     {
         _listingService = listingService;
         _listingRepository = listingRepository;
@@ -34,6 +37,7 @@ public class ListingsController : ControllerBase
         _categoryRepository = categoryRepository;
         _userRepository = userRepository;
         _imageUploadService = imageUploadService;
+        _boostService = boostService;
     }
 
     private Guid GetCurrentUserId()
@@ -107,6 +111,18 @@ public class ListingsController : ControllerBase
         {
             var userId = GetCurrentUserId();
 
+            // Check quota before creating listing
+            var canCreate = await _boostService.CanCreateListingAsync(userId);
+            if (!canCreate)
+            {
+                var quotaStatus = await _boostService.GetQuotaStatusAsync(userId);
+                return BadRequest(new
+                {
+                    error = "Quota exceeded. Please purchase a boost package or wait until next month.",
+                    quotaStatus
+                });
+            }
+
             // Upload images if provided
             var imageUrls = new List<string>();
             if (images != null && images.Any())
@@ -137,6 +153,10 @@ public class ListingsController : ControllerBase
             );
 
             var listing = await _listingService.CreateListingAsync(request);
+
+            // Use quota after successful creation
+            await _boostService.UseQuotaAsync(userId);
+
             return CreatedAtAction(nameof(GetListingById), new { id = listing.Id }, MapToDetailResponse(listing));
         }
         catch (UnauthorizedAccessException ex)
@@ -399,7 +419,13 @@ public class ListingsController : ControllerBase
             createdAt = listing.CreatedAt,
             updatedAt = listing.UpdatedAt,
             expiresAt = listing.ExpiresAt,
-            rejectionReason = listing.RejectionReason
+            rejectionReason = listing.RejectionReason,
+            boostInfo = listing.BoostedAt.HasValue ? new
+            {
+                boostedAt = listing.BoostedAt,
+                boostExpiresAt = listing.BoostExpiresAt,
+                priority = listing.BoostPriority
+            } : null
         };
     }
 }

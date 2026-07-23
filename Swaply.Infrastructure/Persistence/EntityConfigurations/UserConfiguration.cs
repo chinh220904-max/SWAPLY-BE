@@ -85,11 +85,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey(r => r.ReporterId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(u => u.Subscriptions)
-            .WithOne(s => s.User)
-            .HasForeignKey(s => s.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         // Note: User -> Conversation reverse navigation is intentionally omitted.
         // Conversation is configured from its side (User1Id/User2Id -> User).
     }

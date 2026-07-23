@@ -43,9 +43,6 @@ public class User
     private readonly List<Report> _reportsMade = new();
     public IReadOnlyCollection<Report> ReportsMade => _reportsMade.AsReadOnly();
 
-    private readonly List<Subscription> _subscriptions = new();
-    public IReadOnlyCollection<Subscription> Subscriptions => _subscriptions.AsReadOnly();
-
     private readonly List<Favorite> _favorites = new();
     public IReadOnlyCollection<Favorite> Favorites => _favorites.AsReadOnly();
 

@@ -239,6 +239,8 @@ public class AdminListingsController : ControllerBase
         location = l.Location,
         ownerName = l.Owner?.FullName ?? string.Empty,
         ownerId = l.OwnerId,
+        categoryId = l.CategoryId,
+        categoryName = l.Category?.Name ?? string.Empty,
         imageUrls = l.Images.Select(i => i.ImageUrl).ToList(),
         createdAt = l.CreatedAt
     };

@@ -12,8 +12,8 @@ using Swaply.Infrastructure.Persistence;
 namespace Swaply.Api.Migrations
 {
     [DbContext(typeof(SwaplyDbContext))]
-    [Migration("20260713211355_RemoveIconUrlFromCategory")]
-    partial class RemoveIconUrlFromCategory
+    [Migration("20260720184430_AddBoostSystem")]
+    partial class AddBoostSystem
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,150 @@ namespace Swaply.Api.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BoostSubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("BoostedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoostSubscriptionId");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("ListingId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("BoostHistories", (string)null);
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostPackage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("DurationDays")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("MaxListings")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Priority")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(100);
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BoostPackages", (string)null);
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostPackageGoldenHour", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BoostPackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoostPackageId");
+
+                    b.ToTable("BoostPackageGoldenHours", (string)null);
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BoostPackageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("TotalQuota")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsedQuota")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoostPackageId");
+
+                    b.HasIndex("UserId", "Status");
+
+                    b.ToTable("BoostSubscriptions", (string)null);
+                });
 
             modelBuilder.Entity("Swaply.Domain.Entities.Category", b =>
                 {
@@ -167,6 +311,18 @@ namespace Swaply.Api.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("BoostExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("BoostPriority")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("BoostSubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("BoostedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Brand")
                         .IsRequired()
@@ -423,47 +579,7 @@ namespace Swaply.Api.Migrations
                     b.ToTable("OtpCodes", (string)null);
                 });
 
-            modelBuilder.Entity("Swaply.Domain.Entities.Payment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Method")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Pending");
-
-                    b.Property<Guid>("SubscriptionId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("TransactionId")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubscriptionId")
-                        .IsUnique();
-
-                    b.ToTable("Payments", (string)null);
-                });
-
-            modelBuilder.Entity("Swaply.Domain.Entities.PremiumPlan", b =>
+            modelBuilder.Entity("Swaply.Domain.Entities.Package", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -498,7 +614,7 @@ namespace Swaply.Api.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("PremiumPlans", (string)null);
+                    b.ToTable("Packages", (string)null);
 
                     b.HasData(
                         new
@@ -521,6 +637,79 @@ namespace Swaply.Api.Migrations
                             Name = "Premium",
                             Price = 199000m
                         });
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("IpnQuery")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("OrderInfo")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PayUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ReturnQuery")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<Guid>("SubscriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique();
+
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("Swaply.Domain.Entities.Report", b =>
@@ -660,7 +849,7 @@ namespace Swaply.Api.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("PremiumPlanId")
+                    b.Property<Guid>("PackageId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("StartedAt")
@@ -678,7 +867,7 @@ namespace Swaply.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PremiumPlanId");
+                    b.HasIndex("PackageId");
 
                     b.HasIndex("UserId", "Status", "ExpiresAt");
 
@@ -749,6 +938,96 @@ namespace Swaply.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.UserMonthlyQuota", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalQuota")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(3);
+
+                    b.Property<int>("UsedQuota")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("UserMonthlyQuotas", (string)null);
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostHistory", b =>
+                {
+                    b.HasOne("Swaply.Domain.Entities.BoostSubscription", "BoostSubscription")
+                        .WithMany("BoostHistories")
+                        .HasForeignKey("BoostSubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Swaply.Domain.Entities.Listing", "Listing")
+                        .WithMany()
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Swaply.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BoostSubscription");
+
+                    b.Navigation("Listing");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostPackageGoldenHour", b =>
+                {
+                    b.HasOne("Swaply.Domain.Entities.BoostPackage", "BoostPackage")
+                        .WithMany()
+                        .HasForeignKey("BoostPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BoostPackage");
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostSubscription", b =>
+                {
+                    b.HasOne("Swaply.Domain.Entities.BoostPackage", "BoostPackage")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("BoostPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Swaply.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BoostPackage");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Swaply.Domain.Entities.Conversation", b =>
@@ -1040,9 +1319,9 @@ namespace Swaply.Api.Migrations
 
             modelBuilder.Entity("Swaply.Domain.Entities.Subscription", b =>
                 {
-                    b.HasOne("Swaply.Domain.Entities.PremiumPlan", "PremiumPlan")
+                    b.HasOne("Swaply.Domain.Entities.Package", "Package")
                         .WithMany("Subscriptions")
-                        .HasForeignKey("PremiumPlanId")
+                        .HasForeignKey("PackageId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1052,7 +1331,7 @@ namespace Swaply.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("PremiumPlan");
+                    b.Navigation("Package");
 
                     b.Navigation("User");
                 });
@@ -1066,6 +1345,27 @@ namespace Swaply.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.UserMonthlyQuota", b =>
+                {
+                    b.HasOne("Swaply.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostPackage", b =>
+                {
+                    b.Navigation("Subscriptions");
+                });
+
+            modelBuilder.Entity("Swaply.Domain.Entities.BoostSubscription", b =>
+                {
+                    b.Navigation("BoostHistories");
                 });
 
             modelBuilder.Entity("Swaply.Domain.Entities.Category", b =>
@@ -1098,7 +1398,7 @@ namespace Swaply.Api.Migrations
                     b.Navigation("SourceMatches");
                 });
 
-            modelBuilder.Entity("Swaply.Domain.Entities.PremiumPlan", b =>
+            modelBuilder.Entity("Swaply.Domain.Entities.Package", b =>
                 {
                     b.Navigation("Subscriptions");
                 });
