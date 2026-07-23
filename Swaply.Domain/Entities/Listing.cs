@@ -25,6 +25,7 @@ public class Listing
     public int FavoriteCount { get; private set; } = 0;
     public DateTime? ExpiresAt { get; private set; }
     public string? RejectionReason { get; private set; }
+    public bool IsDeleted { get; private set; } = false;
 
     // Navigation properties
     public User? Owner { get; private set; }
@@ -134,6 +135,21 @@ public class Listing
     {
         Status = ListingStatus.Hidden;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SoftDelete()
+    {
+        IsDeleted = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Restore()
+    {
+        if (IsDeleted)
+        {
+            IsDeleted = false;
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 
     public void Renew()

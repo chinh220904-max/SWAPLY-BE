@@ -47,13 +47,15 @@ public class FavoriteRepository : IFavoriteRepository
 
         if (existing != null)
         {
-            await DeleteAsync(existing.Id, cancellationToken);
+            _context.Favorites.Remove(existing);
         }
         else
         {
             var favorite = new Favorite(userId, listingId);
             await AddAsync(favorite, cancellationToken);
         }
+
+        await _context.SaveChangesAsync(cancellationToken);
 
         var count = _context.Favorites.Count(f => f.ListingId == listingId);
         return (existing == null, count);

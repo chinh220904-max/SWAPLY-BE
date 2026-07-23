@@ -7,8 +7,10 @@ public class ExchangeDomainService : IExchangeDomainService
 {
     public bool CanPerformExchange(Listing proposerListing, Listing receiverListing)
     {
-        // Business rule: Both listings must be Active to be exchanged
-        return proposerListing.Status == ListingStatus.Active && 
-               receiverListing.Status == ListingStatus.Active;
+        // Business rule: Both listings must be Active and not deleted to be exchanged
+        return proposerListing.Status == ListingStatus.Active &&
+               receiverListing.Status == ListingStatus.Active &&
+               !proposerListing.IsDeleted &&
+               !receiverListing.IsDeleted;
     }
 }

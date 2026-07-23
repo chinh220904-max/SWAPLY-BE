@@ -154,13 +154,17 @@ public class ListingsController : ControllerBase
     {
         try
         {
+            var userId = GetCurrentUserId();
+
             var listing = await _listingRepository.GetByIdAsync(id);
             if (listing == null)
                 return NotFound(new { error = "Listing not found." });
 
-            var userId = GetCurrentUserId();
             if (listing.OwnerId != userId)
                 return Forbid();
+
+            if (listing.IsDeleted)
+                return BadRequest(new { error = "Listing is deleted." });
 
             var updated = await _listingService.UpdateListingAsync(id, request);
             return Ok(MapToDetailResponse(updated));
@@ -168,6 +172,10 @@ public class ListingsController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             return Unauthorized(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
     }
 
@@ -188,7 +196,10 @@ public class ListingsController : ControllerBase
             if (listing.OwnerId != userId)
                 return Forbid();
 
-            await _listingService.DeleteListingAsync(id);
+            if (listing.IsDeleted)
+                return NoContent();
+
+            await _listingService.SoftDeleteListingAsync(id);
             return NoContent();
         }
         catch (UnauthorizedAccessException ex)
@@ -307,6 +318,9 @@ public class ListingsController : ControllerBase
             var listing = await _listingRepository.GetByIdAsync(id);
             if (listing == null)
                 return NotFound(new { error = "Listing not found." });
+
+            if (listing.IsDeleted)
+                return BadRequest(new { error = "Listing is deleted." });
 
             var userId = GetCurrentUserId();
             var result = await _favoriteRepository.ToggleFavoriteAsync(userId, id);

@@ -81,6 +81,29 @@ public class ReportRepository : IReportRepository
                            r.Status == ReportStatus.Pending, cancellationToken);
     }
 
+    public async Task<int> GetCountByTargetAsync(ReportTargetType targetType, Guid targetId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Reports
+            .CountAsync(r => r.TargetType == targetType && r.TargetId == targetId, cancellationToken);
+    }
+
+    public async Task<Dictionary<Guid, int>> GetAllReportTargetCountsAsync(IEnumerable<Guid> targetIds, CancellationToken cancellationToken = default)
+    {
+        var ids = targetIds?.ToList() ?? new List<Guid>();
+        if (!ids.Any())
+            return new Dictionary<Guid, int>();
+
+        var query = _context.Reports
+            .Where(r => r.TargetType == ReportTargetType.Listing && ids.Contains(r.TargetId));
+
+        var counts = await query
+            .GroupBy(r => r.TargetId)
+            .Select(g => new { Id = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        return counts.ToDictionary(x => x.Id, x => x.Count);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

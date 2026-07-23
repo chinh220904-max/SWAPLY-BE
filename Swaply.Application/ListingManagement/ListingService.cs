@@ -10,11 +10,13 @@ public class ListingService : IListingService
 {
     private readonly IListingRepository _listingRepository;
     private readonly IListingImageRepository _listingImageRepository;
+    private readonly IReportRepository _reportRepository;
 
-    public ListingService(IListingRepository listingRepository, IListingImageRepository listingImageRepository)
+    public ListingService(IListingRepository listingRepository, IListingImageRepository listingImageRepository, IReportRepository reportRepository)
     {
         _listingRepository = listingRepository;
         _listingImageRepository = listingImageRepository;
+        _reportRepository = reportRepository;
     }
 
     public async Task<Listing> CreateListingAsync(CreateListingRequest request, CancellationToken cancellationToken = default)
@@ -40,7 +42,6 @@ public class ListingService : IListingService
 
         await _listingRepository.AddAsync(listing, cancellationToken);
 
-        // Add images if provided
         if (request.ImageUrls != null && request.ImageUrls.Any())
         {
             var images = request.ImageUrls.Select((url, index) =>
@@ -65,6 +66,9 @@ public class ListingService : IListingService
     {
         var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new ListingNotFoundException(id);
+
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is deleted.");
 
         var price = new Money(request.EstimatedAmount, request.Currency);
         Money? cashTopUp = request.CashTopUpAmount.HasValue
@@ -96,6 +100,9 @@ public class ListingService : IListingService
         var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new ListingNotFoundException(id);
 
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is deleted.");
+
         switch (status)
         {
             case ListingStatus.Active:
@@ -123,6 +130,9 @@ public class ListingService : IListingService
         var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new ListingNotFoundException(id);
 
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is deleted.");
+
         listing.Publish();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
         return listing;
@@ -132,6 +142,9 @@ public class ListingService : IListingService
     {
         var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new ListingNotFoundException(id);
+
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is deleted.");
 
         listing.Renew();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
@@ -143,6 +156,9 @@ public class ListingService : IListingService
         var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new ListingNotFoundException(id);
 
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is deleted.");
+
         listing.SubmitForReview();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
         return listing;
@@ -153,6 +169,9 @@ public class ListingService : IListingService
         var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new ListingNotFoundException(id);
 
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is deleted.");
+
         listing.Approve();
         await _listingRepository.UpdateAsync(listing, cancellationToken);
         return listing;
@@ -162,6 +181,9 @@ public class ListingService : IListingService
     {
         var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new ListingNotFoundException(id);
+
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is deleted.");
 
         listing.Reject(reason);
         await _listingRepository.UpdateAsync(listing, cancellationToken);
@@ -230,6 +252,147 @@ public class ListingService : IListingService
             request.PageSize,
             totalPages
         );
+    }
+
+    public async Task<PagedListResponse<AdminListingSummaryResponse>> SearchAdminListingsAsync(string? keyword, ListingStatus? status, string? sortBy, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 20 : pageSize;
+        pageSize = pageSize > 100 ? 100 : pageSize;
+
+        var listings = await _listingRepository.SearchAdminListingsAsync(
+            keyword,
+            status,
+            string.IsNullOrWhiteSpace(sortBy) ? "newest" : sortBy,
+            page,
+            pageSize,
+            cancellationToken);
+
+        var totalCount = await _listingRepository.GetAdminTotalCountAsync(
+            keyword,
+            status,
+            cancellationToken);
+
+        var items = listings.Select(l => new AdminListingSummaryResponse(
+            l.Id,
+            l.Title,
+            l.EstimatedValue.Amount,
+            l.EstimatedValue.Currency,
+            l.Condition,
+            l.Location,
+            l.FavoriteCount,
+            l.Images.FirstOrDefault()?.ImageUrl ?? "",
+            l.Owner?.FullName ?? "",
+            l.Status.ToString(),
+            l.CreatedAt,
+            l.OwnerId
+        )).ToList();
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return new PagedListResponse<AdminListingSummaryResponse>(items, totalCount, page, pageSize, totalPages);
+    }
+
+    public async Task<AdminListingDetailResponse?> GetAdminListingDetailAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdAsync(id, cancellationToken);
+        if (listing == null)
+            return null;
+
+        var reportCount = await _reportRepository.GetCountByTargetAsync(ReportTargetType.Listing, id, cancellationToken);
+
+        return new AdminListingDetailResponse(
+            listing.Id,
+            listing.Title,
+            listing.Description,
+            listing.OwnerId,
+            listing.Owner?.FullName ?? string.Empty,
+            listing.CategoryId,
+            listing.Category?.Name ?? string.Empty,
+            listing.EstimatedValue.Amount,
+            listing.EstimatedValue.Currency,
+            listing.Condition,
+            listing.Condition.ToString(),
+            listing.Status.ToString(),
+            listing.Brand,
+            listing.ExchangeWish,
+            listing.CashTopUp?.Amount,
+            listing.CashTopUp?.Currency,
+            listing.Location,
+            listing.ViewCount,
+            listing.FavoriteCount,
+            listing.Images.Select(i => i.ImageUrl).ToList(),
+            listing.CreatedAt,
+            listing.UpdatedAt,
+            reportCount
+        );
+    }
+
+    public async Task<Listing> HideListingAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new ListingNotFoundException(id);
+
+        if (listing.Status == ListingStatus.Hidden)
+            throw new InvalidOperationException("Listing is already hidden.");
+
+        listing.Hide();
+        await _listingRepository.UpdateAsync(listing, cancellationToken);
+        return listing;
+    }
+
+    public async Task<Listing> RestoreListingAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new ListingNotFoundException(id);
+
+        if (listing.Status != ListingStatus.Hidden)
+            throw new InvalidOperationException("Only hidden listings can be restored.");
+
+        listing.Publish();
+        await _listingRepository.UpdateAsync(listing, cancellationToken);
+        return listing;
+    }
+
+    public async Task SoftDeleteListingAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new ListingNotFoundException(id);
+
+        if (listing.IsDeleted)
+            throw new InvalidOperationException("Listing is already deleted.");
+
+        listing.SoftDelete();
+        await _listingRepository.UpdateAsync(listing, cancellationToken);
+    }
+
+    public async Task<Listing> PermanentlyDeleteListingAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdIncludingDeletedAsync(id, cancellationToken)
+            ?? throw new ListingNotFoundException(id);
+
+        if (!listing.IsDeleted)
+            throw new InvalidOperationException("Listing must be soft-deleted before permanent deletion.");
+
+        await _listingRepository.DeleteAsync(id, cancellationToken);
+        return listing;
+    }
+
+    public async Task RestoreDeletedListingAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var listing = await _listingRepository.GetByIdIncludingDeletedAsync(id, cancellationToken)
+            ?? throw new ListingNotFoundException(id);
+
+        if (!listing.IsDeleted)
+            throw new InvalidOperationException("Listing is not deleted.");
+
+        listing.Restore();
+        await _listingRepository.UpdateAsync(listing, cancellationToken);
+    }
+
+    public async Task<IEnumerable<Listing>> GetDeletedListingsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _listingRepository.GetDeletedListingsAsync(cancellationToken);
     }
 
     public async Task IncrementViewCountAsync(Guid id, CancellationToken cancellationToken = default)
