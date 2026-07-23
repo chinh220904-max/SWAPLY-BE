@@ -33,8 +33,20 @@ public class ExceptionHandlingMiddleware
     {
         var code = HttpStatusCode.InternalServerError;
         var message = "An error occurred while processing your request.";
+        var extraData = (object?)null;
 
-        if (exception is DomainException domainEx)
+        // Check DuplicateExchangeException BEFORE DomainException
+        // because DuplicateExchangeException inherits from DomainException
+        if (exception is DuplicateExchangeException dupEx)
+        {
+            code = HttpStatusCode.Conflict;
+            message = dupEx.Message;
+            if (dupEx.ExistingExchangeId.HasValue)
+            {
+                extraData = new { existingExchangeId = dupEx.ExistingExchangeId.Value };
+            }
+        }
+        else if (exception is DomainException domainEx)
         {
             code = HttpStatusCode.BadRequest;
             message = domainEx.Message;
@@ -53,7 +65,17 @@ public class ExceptionHandlingMiddleware
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)code;
 
-        var result = JsonSerializer.Serialize(new { error = message });
+        object responseObj;
+        if (extraData != null)
+        {
+            responseObj = new { error = message, existingExchangeId = ((dynamic)extraData).existingExchangeId };
+        }
+        else
+        {
+            responseObj = new { error = message };
+        }
+
+        var result = JsonSerializer.Serialize(responseObj);
         return context.Response.WriteAsync(result);
     }
 }

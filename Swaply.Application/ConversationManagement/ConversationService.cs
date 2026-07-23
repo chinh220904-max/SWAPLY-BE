@@ -48,54 +48,23 @@ public class ConversationService : IConversationService
 
     public async Task<ConversationDto> CreateConversationAsync(Guid currentUserId, CreateConversationRequest request, CancellationToken cancellationToken = default)
     {
-        // Block duplicate: if a Conversation already exists for this Exchange, return it only after verifying
-        // the requester is a participant — otherwise an unauthorized user could enumerate conversations
-        // by supplying random exchange IDs.
-        if (request.RelatedExchangeId.HasValue)
-        {
-            var existingByExchange = await _conversationRepository.GetByExchangeIdAsync(request.RelatedExchangeId.Value, cancellationToken);
-            if (existingByExchange != null)
-            {
-                if (!IsParticipant(existingByExchange, currentUserId))
-                    throw new UnauthorizedAccessException("You are not a participant of this conversation.");
-                return ToConversationDto(existingByExchange, currentUserId);
-            }
+        // Normalize user pair for unique conversation lookup
+        var user1Id = currentUserId.CompareTo(request.OtherUserId) < 0 ? currentUserId : request.OtherUserId;
+        var user2Id = currentUserId.CompareTo(request.OtherUserId) < 0 ? request.OtherUserId : currentUserId;
 
-            // No existing conversation — validate the requester is a participant before creating a new one.
-            // An authenticated third party must not be able to link a conversation to someone else's Exchange.
-            var exchange = await _exchangeRepository.GetByIdAsync(request.RelatedExchangeId.Value, cancellationToken);
-            if (exchange == null)
-                throw new InvalidOperationException("Exchange not found.");
+        // Check if conversation already exists for this user pair
+        var existing = await _conversationRepository.GetByUsersAsync(user1Id, user2Id, cancellationToken);
+        if (existing != null)
+            throw new InvalidOperationException("Conversation already exists for this user pair.");
 
-            if (exchange.ProposerId != currentUserId && exchange.ReceiverId != currentUserId)
-                throw new UnauthorizedAccessException("You are not a participant of this exchange.");
-
-            if (request.OtherUserId != exchange.ProposerId && request.OtherUserId != exchange.ReceiverId)
-                throw new ArgumentException("OtherUserId must be a participant of the exchange.");
-
-            if (request.OtherUserId != (exchange.ProposerId == currentUserId ? exchange.ReceiverId : exchange.ProposerId))
-                throw new ArgumentException("OtherUserId must be the other participant of the exchange.");
-
-            // Validate RelatedListingId if provided — it must be one of the Exchange's listings
-            if (request.RelatedListingId != Guid.Empty)
-            {
-                if (request.RelatedListingId != exchange.ProposerListingId && request.RelatedListingId != exchange.ReceiverListingId)
-                    throw new ArgumentException("RelatedListingId must be one of the listings in the exchange.");
-            }
-        }
-
+        // Validate the request
         await ValidateConversationRequest(currentUserId, request, cancellationToken);
 
-        var existing = await _conversationRepository.GetByUsersAndListingAsync(
-            currentUserId, request.OtherUserId, request.RelatedListingId, cancellationToken);
-        if (existing != null)
-            throw new InvalidOperationException("Conversation already exists for this listing.");
-
         var conversation = new Conversation(
-            user1Id: currentUserId,
-            user2Id: request.OtherUserId,
-            relatedListingId: request.RelatedListingId,
-            relatedExchangeId: request.RelatedExchangeId
+            user1Id: user1Id,
+            user2Id: user2Id,
+            relatedListingId: null, // Conversation is shared across listings
+            relatedExchangeId: null
         );
 
         var created = await _conversationRepository.CreateAsync(conversation, cancellationToken);
@@ -106,17 +75,22 @@ public class ConversationService : IConversationService
 
     public async Task<ConversationDto?> GetOrCreateConversationAsync(Guid currentUserId, CreateConversationRequest request, CancellationToken cancellationToken = default)
     {
-        await ValidateConversationRequest(currentUserId, request, cancellationToken);
+        // Normalize user pair for unique conversation lookup
+        var user1Id = currentUserId.CompareTo(request.OtherUserId) < 0 ? currentUserId : request.OtherUserId;
+        var user2Id = currentUserId.CompareTo(request.OtherUserId) < 0 ? request.OtherUserId : currentUserId;
 
-        var existing = await _conversationRepository.GetByUsersAndListingAsync(
-            currentUserId, request.OtherUserId, request.RelatedListingId, cancellationToken);
+        // Check if conversation already exists for this user pair
+        var existing = await _conversationRepository.GetByUsersAsync(user1Id, user2Id, cancellationToken);
         if (existing != null) return ToConversationDto(existing, currentUserId);
 
+        // Validate the request
+        await ValidateConversationRequest(currentUserId, request, cancellationToken);
+
         var conversation = new Conversation(
-            user1Id: currentUserId,
-            user2Id: request.OtherUserId,
-            relatedListingId: request.RelatedListingId,
-            relatedExchangeId: request.RelatedExchangeId
+            user1Id: user1Id,
+            user2Id: user2Id,
+            relatedListingId: null, // Conversation is shared across listings
+            relatedExchangeId: null
         );
 
         var created = await _conversationRepository.CreateAsync(conversation, cancellationToken);

@@ -70,6 +70,30 @@ public class ExchangeService : IExchangeService
         if (!_exchangeDomainService.CanPerformExchange(proposerListing, receiverListing))
             throw new InvalidExchangeStateException("Exchange cannot be performed. Both listings must be active.");
 
+        // Check for duplicate active exchange by listing pair (regardless of direction)
+        var existingActiveExchange = await _exchangeRepository.GetActiveByListingPairAsync(
+            request.ProposerListingId,
+            request.ReceiverListingId,
+            cancellationToken);
+
+        if (existingActiveExchange != null)
+        {
+            // Determine if it's reversed direction
+            var isReversed = existingActiveExchange.ProposerListingId == request.ReceiverListingId
+                && existingActiveExchange.ReceiverListingId == request.ProposerListingId;
+
+            var message = isReversed
+                ? "Giữa hai sản phẩm này đã có một yêu cầu trao đổi đang hoạt động."
+                : "Yêu cầu trao đổi này đã tồn tại và đang chờ xử lý.";
+
+            throw new DuplicateExchangeException(
+                message,
+                listing1Id: request.ProposerListingId,
+                listing2Id: request.ReceiverListingId,
+                isReversed: isReversed,
+                existingExchangeId: existingActiveExchange.Id);
+        }
+
         var exchange = new Exchange(
             request.ProposerListingId,
             request.ReceiverListingId,
@@ -80,17 +104,51 @@ public class ExchangeService : IExchangeService
 
         await _exchangeRepository.AddAsync(exchange, cancellationToken);
 
+        // Find or create Conversation based on user pair only
         var user1Id = proposerId.CompareTo(receiverId) < 0 ? proposerId : receiverId;
         var user2Id = proposerId.CompareTo(receiverId) < 0 ? receiverId : proposerId;
-        var conversation = new Conversation(
-            user1Id: user1Id,
-            user2Id: user2Id,
-            relatedListingId: request.ReceiverListingId,
-            relatedExchangeId: exchange.Id
-        );
-        await _conversationRepository.AddAsync(conversation, cancellationToken);
 
-        await _exchangeRepository.SaveChangesAsync(cancellationToken);
+        var existingConversation = await _conversationRepository.GetByUsersAsync(user1Id, user2Id, cancellationToken);
+        Conversation conversation;
+
+        if (existingConversation != null)
+        {
+            conversation = existingConversation;
+        }
+        else
+        {
+            conversation = new Conversation(
+                user1Id: user1Id,
+                user2Id: user2Id,
+                relatedListingId: null,
+                relatedExchangeId: null // Conversation is shared across exchanges, not tied to one
+            );
+            await _conversationRepository.AddAsync(conversation, cancellationToken);
+        }
+
+        // Handle race condition: if another request created the conversation concurrently
+        // between our check and our add, SaveChanges will throw a unique constraint violation
+        try
+        {
+            await _exchangeRepository.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Check if it's a unique constraint violation on the conversation user pair
+            var message = ex.InnerException?.Message ?? ex.Message;
+            if (message.Contains("IX_Conversations_User1_User2", StringComparison.OrdinalIgnoreCase) ||
+                message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase))
+            {
+                // Roll back the conversation add (EF will do this automatically on exception)
+                // Reload the existing conversation
+                conversation = await _conversationRepository.GetByUsersAsync(user1Id, user2Id, cancellationToken)
+                    ?? throw new InvalidOperationException("Failed to find conversation after concurrent creation.", ex);
+            }
+            else
+            {
+                throw; // Re-throw unrelated exceptions
+            }
+        }
 
         var proposer = await _userRepository.GetByIdAsync(proposerId);
         var proposerName = proposer?.UserName ?? "A user";
@@ -177,6 +235,19 @@ public class ExchangeService : IExchangeService
 
         if (exchange.Status != ExchangeStatus.Pending)
             throw new InvalidExchangeStateException($"Cannot accept an exchange in status '{exchange.Status}'.");
+
+        // Auto-cancel competing pending exchanges that share at least one listing
+        var competingExchanges = await _exchangeRepository.GetCompetingPendingExchangesAsync(
+            exchangeId,
+            exchange.ProposerListingId,
+            exchange.ReceiverListingId,
+            cancellationToken);
+
+        foreach (var competingExchange in competingExchanges)
+        {
+            competingExchange.Cancel();
+            await _exchangeRepository.UpdateAsync(competingExchange, cancellationToken);
+        }
 
         exchange.Accept();
         await _exchangeRepository.UpdateAsync(exchange, cancellationToken);
@@ -366,7 +437,10 @@ public class ExchangeService : IExchangeService
 
     private async Task<ExchangeDto> MapToDto(Exchange exchange, CancellationToken cancellationToken = default)
     {
-        var conversationId = (await _conversationRepository.GetByExchangeIdAsync(exchange.Id, cancellationToken))?.Id;
+        // Find Conversation by user pair (not by RelatedExchangeId since Conversation is shared)
+        var user1Id = exchange.ProposerId.CompareTo(exchange.ReceiverId) < 0 ? exchange.ProposerId : exchange.ReceiverId;
+        var user2Id = exchange.ProposerId.CompareTo(exchange.ReceiverId) < 0 ? exchange.ReceiverId : exchange.ProposerId;
+        var conversationId = (await _conversationRepository.GetByUsersAsync(user1Id, user2Id, cancellationToken))?.Id;
         return new ExchangeDto(
             exchange.Id,
             exchange.ProposerListingId,
