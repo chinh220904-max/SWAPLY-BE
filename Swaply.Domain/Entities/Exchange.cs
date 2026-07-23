@@ -13,6 +13,11 @@ public class Exchange
     public string? Message { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
+    public bool ProposerConfirmedComplete { get; private set; }
+    public bool ReceiverConfirmedComplete { get; private set; }
+    public DateTime? ProposerConfirmedAt { get; private set; }
+    public DateTime? ReceiverConfirmedAt { get; private set; }
+    public DateTime? CompletedAt { get; private set; }
 
     // Navigation properties
     public Listing? ProposerListing { get; private set; }
@@ -57,12 +62,32 @@ public class Exchange
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void Complete()
+    public void ConfirmCompletion(Guid currentUserId)
     {
         if (Status != ExchangeStatus.Accepted)
-            throw new InvalidOperationException("Exchange must be accepted before completing.");
-        Status = ExchangeStatus.Completed;
-        UpdatedAt = DateTime.UtcNow;
+            throw new InvalidOperationException("Only accepted exchanges can be marked as complete.");
+
+        if (ProposerId != currentUserId && ReceiverId != currentUserId)
+            throw new UnauthorizedAccessException("Only participants can confirm exchange completion.");
+
+        if (ProposerId == currentUserId)
+        {
+            if (ProposerConfirmedComplete) return;
+            ProposerConfirmedComplete = true;
+            ProposerConfirmedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            if (ReceiverConfirmedComplete) return;
+            ReceiverConfirmedComplete = true;
+            ReceiverConfirmedAt = DateTime.UtcNow;
+        }
+
+        if (ProposerConfirmedComplete && ReceiverConfirmedComplete)
+        {
+            Status = ExchangeStatus.Completed;
+            CompletedAt = DateTime.UtcNow;
+        }
     }
 
     public void Cancel()

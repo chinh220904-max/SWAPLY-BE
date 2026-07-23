@@ -12,6 +12,7 @@ public record ReviewDto(
     Guid ExchangeId,
     Guid ReviewerId,
     string ReviewerName,
+    string? ReviewerAvatarUrl,
     Guid RevieweeId,
     string RevieweeName,
     int Rating,

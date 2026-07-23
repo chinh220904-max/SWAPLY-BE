@@ -32,7 +32,7 @@ public class ReviewsController : ControllerBase
         try
         {
             var review = await _reviewService.CreateReviewAsync(userId, request);
-            return CreatedAtAction(nameof(GetUserReviews), new { userId = request.RevieweeId }, review);
+            return CreatedAtAction(nameof(GetReviewById), new { reviewId = review.Id }, review);
         }
         catch (ArgumentException ex)
         {
@@ -46,6 +46,31 @@ public class ReviewsController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
         }
+    }
+
+    [HttpGet("{reviewId:guid}")]
+    public async Task<IActionResult> GetReviewById(Guid reviewId)
+    {
+        var review = await _reviewService.GetReviewByIdAsync(reviewId);
+        if (review == null)
+            return NotFound(new { message = "Review not found." });
+        return Ok(review);
+    }
+
+    [HttpGet("my/received")]
+    public async Task<IActionResult> GetMyReceivedReviews()
+    {
+        var userId = GetCurrentUserId();
+        var reviews = await _reviewService.GetReceivedReviewsAsync(userId);
+        return Ok(reviews);
+    }
+
+    [HttpGet("my/given")]
+    public async Task<IActionResult> GetMyGivenReviews()
+    {
+        var userId = GetCurrentUserId();
+        var reviews = await _reviewService.GetGivenReviewsAsync(userId);
+        return Ok(reviews);
     }
 
     [HttpGet("~/api/users/{userId:guid}/reviews")]

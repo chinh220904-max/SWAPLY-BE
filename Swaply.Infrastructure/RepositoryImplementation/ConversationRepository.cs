@@ -53,6 +53,16 @@ public class ConversationRepository : IConversationRepository
                 c.RelatedListingId == listingId, cancellationToken);
     }
 
+    public async Task<Conversation?> GetByExchangeIdAsync(Guid exchangeId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Conversations
+            .Include(c => c.User1)
+            .Include(c => c.User2)
+            .Include(c => c.RelatedListing)
+            .Include(c => c.RelatedExchange)
+            .FirstOrDefaultAsync(c => c.RelatedExchangeId == exchangeId, cancellationToken);
+    }
+
     public async Task<IEnumerable<Conversation>> GetUserConversationsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Conversations
@@ -70,6 +80,11 @@ public class ConversationRepository : IConversationRepository
         await _context.Conversations.AddAsync(conversation, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
         return conversation;
+    }
+
+    public async Task AddAsync(Conversation conversation, CancellationToken cancellationToken = default)
+    {
+        await _context.Conversations.AddAsync(conversation, cancellationToken);
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -25,6 +25,23 @@ public class ExchangeConfiguration : IEntityTypeConfiguration<Exchange>
         builder.Property(e => e.CreatedAt)
             .IsRequired();
 
+        builder.Property(e => e.ProposerConfirmedComplete)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(e => e.ReceiverConfirmedComplete)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(e => e.ProposerConfirmedAt)
+            .IsRequired(false);
+
+        builder.Property(e => e.ReceiverConfirmedAt)
+            .IsRequired(false);
+
+        builder.Property(e => e.CompletedAt)
+            .IsRequired(false);
+
         // ProposerListing relationship
         builder.HasOne(e => e.ProposerListing)
             .WithMany(l => l.ProposedExchanges)

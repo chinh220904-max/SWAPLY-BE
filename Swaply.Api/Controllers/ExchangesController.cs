@@ -54,7 +54,18 @@ public class ExchangesController : ControllerBase
         return Ok(exchanges);
     }
 
-    [HttpGet("incoming")]
+    [HttpGet("my/outgoing")]
+    public async Task<IActionResult> Outgoing()
+    {
+        var requesterId = GetRequesterId();
+        if (requesterId == Guid.Empty)
+            return Unauthorized(new { error = "Invalid or missing user id in token." });
+
+        var exchanges = await _exchangeService.GetOutgoingExchangesAsync(requesterId);
+        return Ok(exchanges);
+    }
+
+    [HttpGet("my/incoming")]
     public async Task<IActionResult> Incoming()
     {
         var requesterId = GetRequesterId();

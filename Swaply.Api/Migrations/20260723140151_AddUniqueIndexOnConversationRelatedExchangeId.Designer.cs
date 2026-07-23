@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Swaply.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Swaply.Infrastructure.Persistence;
 namespace Swaply.Api.Migrations
 {
     [DbContext(typeof(SwaplyDbContext))]
-    partial class SwaplyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260723140151_AddUniqueIndexOnConversationRelatedExchangeId")]
+    partial class AddUniqueIndexOnConversationRelatedExchangeId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -238,9 +241,6 @@ namespace Swaply.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -248,27 +248,11 @@ namespace Swaply.Api.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTime?>("ProposerConfirmedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("ProposerConfirmedComplete")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<Guid>("ProposerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ProposerListingId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ReceiverConfirmedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("ReceiverConfirmedComplete")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
 
                     b.Property<Guid>("ReceiverId")
                         .HasColumnType("uniqueidentifier");

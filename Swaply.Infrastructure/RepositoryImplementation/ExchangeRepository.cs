@@ -36,7 +36,15 @@ public class ExchangeRepository : IExchangeRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Exchange>> GetMyExchangesAsync(Guid proposerId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Exchange>> GetMyExchangesAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Exchanges
+            .Where(x => x.ProposerId == userId || x.ReceiverId == userId)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Exchange>> GetOutgoingExchangesAsync(Guid proposerId, CancellationToken cancellationToken = default)
     {
         return await _context.Exchanges
             .Where(x => x.ProposerId == proposerId)

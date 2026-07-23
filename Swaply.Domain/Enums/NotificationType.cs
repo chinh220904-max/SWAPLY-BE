@@ -7,7 +7,7 @@ public enum NotificationType
     ExchangeRejected,
     ExchangeCompleted,
     NewMessage,
-    NewReview,
+    ReviewReceived,
     NewMatch,
     System,
     ReportProcessed

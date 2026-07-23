@@ -9,6 +9,7 @@ public class ConversationService : IConversationService
     private readonly IConversationRepository _conversationRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly IListingRepository _listingRepository;
+    private readonly IExchangeRepository _exchangeRepository;
     private readonly IUserRepository _userRepository;
     private readonly INotificationService _notificationService;
 
@@ -16,12 +17,14 @@ public class ConversationService : IConversationService
         IConversationRepository conversationRepository,
         IMessageRepository messageRepository,
         IListingRepository listingRepository,
+        IExchangeRepository exchangeRepository,
         IUserRepository userRepository,
         INotificationService notificationService)
     {
         _conversationRepository = conversationRepository;
         _messageRepository = messageRepository;
         _listingRepository = listingRepository;
+        _exchangeRepository = exchangeRepository;
         _userRepository = userRepository;
         _notificationService = notificationService;
     }
@@ -45,6 +48,42 @@ public class ConversationService : IConversationService
 
     public async Task<ConversationDto> CreateConversationAsync(Guid currentUserId, CreateConversationRequest request, CancellationToken cancellationToken = default)
     {
+        // Block duplicate: if a Conversation already exists for this Exchange, return it only after verifying
+        // the requester is a participant — otherwise an unauthorized user could enumerate conversations
+        // by supplying random exchange IDs.
+        if (request.RelatedExchangeId.HasValue)
+        {
+            var existingByExchange = await _conversationRepository.GetByExchangeIdAsync(request.RelatedExchangeId.Value, cancellationToken);
+            if (existingByExchange != null)
+            {
+                if (!IsParticipant(existingByExchange, currentUserId))
+                    throw new UnauthorizedAccessException("You are not a participant of this conversation.");
+                return ToConversationDto(existingByExchange, currentUserId);
+            }
+
+            // No existing conversation — validate the requester is a participant before creating a new one.
+            // An authenticated third party must not be able to link a conversation to someone else's Exchange.
+            var exchange = await _exchangeRepository.GetByIdAsync(request.RelatedExchangeId.Value, cancellationToken);
+            if (exchange == null)
+                throw new InvalidOperationException("Exchange not found.");
+
+            if (exchange.ProposerId != currentUserId && exchange.ReceiverId != currentUserId)
+                throw new UnauthorizedAccessException("You are not a participant of this exchange.");
+
+            if (request.OtherUserId != exchange.ProposerId && request.OtherUserId != exchange.ReceiverId)
+                throw new ArgumentException("OtherUserId must be a participant of the exchange.");
+
+            if (request.OtherUserId != (exchange.ProposerId == currentUserId ? exchange.ReceiverId : exchange.ProposerId))
+                throw new ArgumentException("OtherUserId must be the other participant of the exchange.");
+
+            // Validate RelatedListingId if provided — it must be one of the Exchange's listings
+            if (request.RelatedListingId != Guid.Empty)
+            {
+                if (request.RelatedListingId != exchange.ProposerListingId && request.RelatedListingId != exchange.ReceiverListingId)
+                    throw new ArgumentException("RelatedListingId must be one of the listings in the exchange.");
+            }
+        }
+
         await ValidateConversationRequest(currentUserId, request, cancellationToken);
 
         var existing = await _conversationRepository.GetByUsersAndListingAsync(
