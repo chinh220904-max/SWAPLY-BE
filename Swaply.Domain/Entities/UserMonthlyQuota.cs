@@ -9,7 +9,7 @@ public class UserMonthlyQuota
     public int TotalQuota { get; private set; }
     public int UsedQuota { get; private set; }
 
-    private static readonly int DefaultQuota = 3;
+    private static readonly int DefaultQuota = 10;
 
     public User? User { get; private set; }
 
