@@ -32,7 +32,7 @@ public class ExceptionHandlingMiddleware
     private static Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var code = HttpStatusCode.InternalServerError;
-        var message = "An error occurred while processing your request.";
+        var message = string.IsNullOrWhiteSpace(exception.Message) ? "An error occurred while processing your request." : exception.Message;
         var extraData = (object?)null;
 
         // Check DuplicateExchangeException BEFORE DomainException

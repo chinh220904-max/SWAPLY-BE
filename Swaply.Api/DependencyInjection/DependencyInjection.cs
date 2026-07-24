@@ -13,6 +13,7 @@ using Swaply.Application.ListingManagement;
 using Swaply.Application.NotificationManagement;
 using Swaply.Application.PremiumManagement;
 using Swaply.Application.ReportManagement;
+using Swaply.Application.ReportManagement.FluentValidation;
 using Swaply.Application.ReviewManagement;
 using FluentValidation;
 using Swaply.Domain.DomainServices;
@@ -39,6 +40,8 @@ public static class DependencyInjection
         services.AddScoped<IConversationService, ConversationService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<ProcessReportValidator>();
+        services.AddScoped<CreateReportValidator>();
         services.AddScoped<Swaply.Application.NotificationManagement.INotificationService, Swaply.Application.NotificationManagement.NotificationService>();
         services.AddScoped<IAdminUserService, AdminUserService>();
         services.AddScoped<IValidator<LockUserRequest>, LockUserValidator>();

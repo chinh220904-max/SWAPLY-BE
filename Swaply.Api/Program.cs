@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -13,7 +13,7 @@ using Swaply.Application.BoostManagement;
 using Swaply.Infrastructure.Persistence;
 
 // Clear default claim type mappings to preserve original claim types
-JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear(); 
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +25,22 @@ builder.Services.AddControllers()
     });
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient();
+
+// ==========================================
+// CẤU HÌNH CORS CHO PHÉP FRONTEND TRUY CẬP
+// ==========================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        // Cho phép cả cổng 3000 và 5173 truy cập
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:3001")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials(); // Cần thiết cho SignalR
+    });
+});
+// ==========================================
 
 // Register Clean Architecture Layers
 builder.Services.AddApplication();
@@ -72,7 +88,7 @@ builder.Services.AddAuthentication(options =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("OnMessageReceived - Token exists: {Token}",
-                context.Request.Headers["Authorization"].FirstOrDefault()?.Substring(0, 50));
+context.Request.Headers["Authorization"].FirstOrDefault()?.Substring(0, 50));
             return Task.CompletedTask;
         },
         OnAuthenticationFailed = context =>
@@ -136,7 +152,6 @@ builder.Services.AddSwaggerGen(options =>
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
         {
@@ -160,7 +175,7 @@ Console.WriteLine(app.Environment.EnvironmentName);
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<SwaplyDbContext>();
-    await context.Database.MigrateAsync();
+                                    await context.Database.MigrateAsync();
 
     // Seed default roles if not exist
     if (!await context.Roles.AnyAsync())
@@ -182,6 +197,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// === KÍCH HOẠT CORS POLICY ===
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

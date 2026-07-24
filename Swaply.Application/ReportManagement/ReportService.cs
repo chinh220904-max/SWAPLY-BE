@@ -48,7 +48,7 @@ public class ReportService : IReportService
 
         await _reportRepository.CreateAsync(report, cancellationToken);
 
-        return MapToResponse(report);
+        return await MapToResponseAsync(report, cancellationToken);
     }
 
     public async Task<PagedReportResponse<ReportResponse>> GetMyReportsAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default)
@@ -58,18 +58,24 @@ public class ReportService : IReportService
         pageSize = pageSize > 100 ? 100 : pageSize;
 
         var (items, totalCount) = await _reportRepository.GetMyReportsAsync(userId, page, pageSize, cancellationToken);
-        return CreatePagedResponse(items.Select(MapToResponse), totalCount, page, pageSize);
+        var responses = new List<ReportResponse>();
+        foreach (var item in items)
+        {
+            responses.Add(await MapToResponseAsync(item, cancellationToken));
+        }
+
+        return CreatePagedResponse(responses, totalCount, page, pageSize);
     }
 
-    public async Task<ReportResponse> GetReportByIdAsync(Guid reportId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<ReportResponse> GetReportByIdAsync(Guid reportId, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         var report = await _reportRepository.GetByIdAsync(reportId, cancellationToken)
             ?? throw new KeyNotFoundException($"Report with ID {reportId} was not found.");
 
-        if (report.ReporterId != userId)
+        if (userId.HasValue && report.ReporterId != userId.Value)
             throw new UnauthorizedAccessException("Access denied.");
 
-        return MapToResponse(report);
+        return await MapToResponseAsync(report, cancellationToken);
     }
 
     public async Task<PagedReportResponse<ReportResponse>> GetAllReportsAsync(int page, int pageSize, CancellationToken cancellationToken = default)
@@ -79,7 +85,13 @@ public class ReportService : IReportService
         pageSize = pageSize > 100 ? 100 : pageSize;
 
         var (items, totalCount) = await _reportRepository.GetAllReportsAsync(page, pageSize, cancellationToken);
-        return CreatePagedResponse(items.Select(MapToResponse), totalCount, page, pageSize);
+        var responses = new List<ReportResponse>();
+        foreach (var item in items)
+        {
+            responses.Add(await MapToResponseAsync(item, cancellationToken));
+        }
+
+        return CreatePagedResponse(responses, totalCount, page, pageSize);
     }
 
     public async Task<PagedReportResponse<ReportResponse>> GetPendingReportsAsync(int page, int pageSize, CancellationToken cancellationToken = default)
@@ -89,7 +101,13 @@ public class ReportService : IReportService
         pageSize = pageSize > 100 ? 100 : pageSize;
 
         var (items, totalCount) = await _reportRepository.GetPendingReportsAsync(page, pageSize, cancellationToken);
-        return CreatePagedResponse(items.Select(MapToResponse), totalCount, page, pageSize);
+        var responses = new List<ReportResponse>();
+        foreach (var item in items)
+        {
+            responses.Add(await MapToResponseAsync(item, cancellationToken));
+        }
+
+        return CreatePagedResponse(responses, totalCount, page, pageSize);
     }
 
     public async Task<ReportResponse> ApproveReportAsync(Guid reportId, string adminNote, CancellationToken cancellationToken = default)
@@ -126,7 +144,7 @@ public class ReportService : IReportService
             throw;
         }
 
-        return MapToResponse(report);
+        return await MapToResponseAsync(report, cancellationToken);
     }
 
     public async Task<ReportResponse> RejectReportAsync(Guid reportId, string adminNote, CancellationToken cancellationToken = default)
@@ -163,20 +181,56 @@ public class ReportService : IReportService
             throw;
         }
 
-        return MapToResponse(report);
+        return await MapToResponseAsync(report, cancellationToken);
     }
 
-    private static ReportResponse MapToResponse(Report report) => new(
-        report.Id,
-        report.ReporterId,
-        report.TargetType.ToString(),
-        report.TargetId,
-        report.Reason.ToString(),
-        report.Description,
-        report.Status.ToString(),
-        report.AdminNote,
-        report.CreatedAt,
-        report.ProcessedAt);
+    private async Task<ReportResponse> MapToResponseAsync(Report report, CancellationToken cancellationToken = default)
+    {
+        string? reporterName = report.Reporter != null
+            ? (!string.IsNullOrWhiteSpace(report.Reporter.FullName) ? report.Reporter.FullName : report.Reporter.UserName)
+            : null;
+
+        if (string.IsNullOrWhiteSpace(reporterName) && report.ReporterId != Guid.Empty)
+        {
+            var reporter = await _userRepository.GetByIdAsync(report.ReporterId);
+            if (reporter != null)
+            {
+                reporterName = !string.IsNullOrWhiteSpace(reporter.FullName) ? reporter.FullName : reporter.UserName;
+            }
+        }
+
+        string? targetName = null;
+        if (report.TargetType == ReportTargetType.User)
+        {
+            var targetUser = await _userRepository.GetByIdAsync(report.TargetId);
+            if (targetUser != null)
+            {
+                targetName = !string.IsNullOrWhiteSpace(targetUser.FullName) ? targetUser.FullName : targetUser.UserName;
+            }
+        }
+        else if (report.TargetType == ReportTargetType.Listing)
+        {
+            var targetListing = await _listingRepository.GetByIdAsync(report.TargetId, cancellationToken);
+            if (targetListing != null)
+            {
+                targetName = targetListing.Title;
+            }
+        }
+
+        return new ReportResponse(
+            report.Id,
+            report.ReporterId,
+            reporterName,
+            report.TargetType.ToString(),
+            report.TargetId,
+            targetName,
+            report.Reason.ToString(),
+            report.Description,
+            report.Status.ToString(),
+            report.AdminNote,
+            report.CreatedAt,
+            report.ProcessedAt);
+    }
 
     private async Task<bool> TargetExistsAsync(ReportTargetType targetType, Guid targetId, CancellationToken cancellationToken)
     {
