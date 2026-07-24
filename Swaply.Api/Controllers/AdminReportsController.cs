@@ -65,16 +65,25 @@ public class AdminReportsController : BaseController
         if (!await IsAdminAsync(userId))
             return Forbid();
 
-        var report = await _reportService.GetReportByIdAsync(id, userId);
-        return Ok(report);
+        try
+        {
+            var report = await _reportService.GetReportByIdAsync(id);
+            return Ok(report);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}/approve")]
-    public async Task<IActionResult> ApproveReport(Guid id, [FromBody] ProcessReportRequest request)
+    public async Task<IActionResult> ApproveReport(Guid id, [FromBody] ProcessReportRequest? request)
     {
         var userId = GetCurrentUserId();
         if (!await IsAdminAsync(userId))
             return Forbid();
+
+        request ??= new ProcessReportRequest("Đã duyệt báo cáo");
 
         var validation = await _processReportValidator.ValidateAsync(request);
         if (!validation.IsValid)
@@ -100,11 +109,13 @@ public class AdminReportsController : BaseController
     }
 
     [HttpPut("{id:guid}/reject")]
-    public async Task<IActionResult> RejectReport(Guid id, [FromBody] ProcessReportRequest request)
+    public async Task<IActionResult> RejectReport(Guid id, [FromBody] ProcessReportRequest? request)
     {
         var userId = GetCurrentUserId();
         if (!await IsAdminAsync(userId))
             return Forbid();
+
+        request ??= new ProcessReportRequest("Đã bác bỏ báo cáo");
 
         var validation = await _processReportValidator.ValidateAsync(request);
         if (!validation.IsValid)

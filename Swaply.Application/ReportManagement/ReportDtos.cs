@@ -14,8 +14,10 @@ public record ProcessReportRequest(string AdminNote);
 public record ReportResponse(
     Guid Id,
     Guid ReporterId,
+    string? ReporterName,
     string TargetType,
     Guid TargetId,
+    string? TargetName,
     string Reason,
     string? Description,
     string Status,
